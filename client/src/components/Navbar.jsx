@@ -1,58 +1,46 @@
 import { Link, useNavigate } from "react-router-dom";
+import { FaHeart } from "react-icons/fa";
 
 function Navbar() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("userInfo"));
 
-  const logoutHandler = () => {
-    localStorage.removeItem("userInfo");
-    navigate("/login");
-  };
-
   return (
-    <nav className="bg-pink-100 shadow-md px-6 py-4 flex justify-between items-center">
+    <div className="flex justify-between items-center px-6 py-3 bg-white/60 backdrop-blur-md shadow-md">
       
-      {/* Logo */}
-      <h1 className="text-2xl font-bold text-pink-500">
-        HealthHer 💖
+      <h1 className="text-xl font-bold text-pink-500 flex items-center gap-2">
+        HealthHer <FaHeart />
       </h1>
 
-      {/* Links */}
-      <div className="flex items-center gap-6 text-gray-700 font-medium">
-        
-        <Link to="/" className="hover:text-pink-500 transition">
-          Home
-        </Link>
+      <div className="flex gap-5 items-center">
+        <Link to="/">Home</Link>
 
-        {!user ? (
+        {user ? (
           <>
-            <Link to="/login" className="hover:text-pink-500 transition">
-              Login
-            </Link>
+            <span className="text-pink-500 font-semibold">
+              {user.name} 
+            </span>
 
-            <Link
-              to="/signup"
-              className="bg-pink-400 text-white px-3 py-1 rounded-lg hover:bg-pink-500 transition"
+            <button
+              onClick={() => {
+                localStorage.removeItem("userInfo");
+                navigate("/login");
+              }}
+              className="bg-pink-400 text-white px-3 py-1 rounded"
             >
-              Signup
-            </Link>
+              Logout
+            </button>
           </>
         ) : (
           <>
-            <Link to="/dashboard" className="hover:text-pink-500 transition">
-              Dashboard
+            <Link to="/login">Login</Link>
+            <Link to="/signup" className="bg-pink-500 text-white px-3 py-1 rounded">
+              Signup
             </Link>
-
-            <button
-              onClick={logoutHandler}
-              className="bg-rose-400 text-white px-3 py-1 rounded-lg hover:bg-rose-500 transition"
-            >
-              Logout 💕
-            </button>
           </>
         )}
       </div>
-    </nav>
+    </div>
   );
 }
 

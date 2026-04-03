@@ -1,28 +1,38 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 function Dashboard() {
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("userInfo"));
 
-const user=JSON.parse(localStorage.getItem("userInfo"));
+  useEffect(() => {
+    if (!user) navigate("/login");
+  }, []);
 
+  return (
+    <motion.div
+      className="flex justify-center mt-10"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <div className="bg-white/70 backdrop-blur-lg p-6 rounded-xl shadow-xl w-96 text-center">
+        
+        <h2 className="text-2xl font-bold text-pink-500">
+          Welcome {user?.name} 💖
+        </h2>
 
-    useEffect(() => {
-        if (!user) {
-            navigate("/login");
-        }
-    },[]);
-return(
-    <div className="p-10">
-        <h1 className="text-xl font-bold">Welcome {user?.name}</h1>
-        <p>Email:{user?.email}</p>
+        <p className="mt-2 text-gray-600">{user?.email}</p>
+
         <button
-        onClick={()=>{
-            localStorage.removeItem("userInfo");
-            navigate("/login");
-        }}
-        className="mt-5 bg-red-500 text-white px-4 py-2">Logout</button>
-    </div>
-);
+          onClick={() => navigate("/tips")}
+          className="mt-4 bg-pink-500 text-white px-4 py-2 rounded"
+        >
+          Health Tips 🌸
+        </button>
+      </div>
+    </motion.div>
+  );
 }
+
 export default Dashboard;
