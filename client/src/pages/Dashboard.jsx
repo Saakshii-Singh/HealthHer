@@ -30,6 +30,13 @@ function Dashboard() {
         >
           Health Tips 🌸
         </button>
+        <button
+          onClick={() => navigate("/tracker")}
+            className="mt-4 bg-pink-500 text-white px-4 py-2 rounded"
+          >
+              Track Period 📅
+        </button>
+
       </div>
     </motion.div>
   );
