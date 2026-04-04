@@ -8,11 +8,11 @@ function Home() {
       animate={{ opacity: 1, y: 0 }}
     >
       <h1 className="text-5xl font-bold text-pink-500">
-        Welcome to HealthHer 💖
+        Welcome to HealthHer 
       </h1>
 
       <p className="mt-4 text-gray-600">
-        Your safe space for health & wellness 🌸
+        Your safe space for health & wellness 
       </p>
     </motion.div>
   );

@@ -21,7 +21,7 @@ function Login() {
 
       localStorage.setItem("userInfo", JSON.stringify(data));
 
-      alert("Login Successful 💖");
+      alert("Login Successful ");
       navigate("/dashboard");
 
     } catch (error) {
@@ -38,7 +38,7 @@ function Login() {
         className="bg-white/60 backdrop-blur-md p-8 rounded-xl shadow-xl w-80"
       >
         <h2 className="text-2xl font-bold text-pink-500 mb-4 text-center flex justify-center gap-2">
-          <FaUser /> Login 💖
+          <FaUser /> Login 
         </h2>
 
         <div className="flex items-center border p-2 mb-3 rounded">

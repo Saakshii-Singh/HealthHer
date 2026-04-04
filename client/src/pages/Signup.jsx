@@ -22,11 +22,11 @@ function Signup() {
 
       localStorage.setItem("userInfo", JSON.stringify(data));
 
-      alert("Signup Successful 💖");
+      alert("Signup Successful ");
       navigate("/dashboard");
 
     } catch (error) {
-      alert(error.response?.data?.message || "Signup Failed ❌");
+      alert(error.response?.data?.message || "Signup Failed ");
     }
   };
 
@@ -39,7 +39,7 @@ function Signup() {
         className="bg-white/60 backdrop-blur-md p-8 rounded-xl shadow-xl w-80"
       >
         <h2 className="text-2xl font-bold text-pink-500 mb-4 text-center">
-          Signup 💖
+          Signup 
         </h2>
 
         <div className="flex items-center border p-2 mb-3 rounded">
