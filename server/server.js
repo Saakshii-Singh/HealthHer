@@ -14,7 +14,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
-app.use("/api/periods", periodRoutes);
+app.use("/api/period", periodRoutes);
 
 app.get("/",(req,res)=>{
     res.send("HealthHer API running...")
