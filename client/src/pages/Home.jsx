@@ -1,7 +1,9 @@
 import React from "react";
+import Slider from "../components/Slider";
 import { useNavigate } from "react-router-dom";
 
 export default function Home() {
+  const navigate=useNavigate();
   return (
     <div className="bg-gradient-to-br from-pink-50 via-white to-pink-100 min-h-screen">
 
@@ -26,32 +28,32 @@ export default function Home() {
           </p>
 
           <div className="mt-8">
-            <button className="bg-pink-500 text-white px-8 py-3 rounded-full shadow-lg hover:bg-pink-600 text-lg">
-              Start Tracking 💖
+            <button 
+            onClick={()=>navigate("/racker")}
+            className="bg-pink-500 text-white px-8 py-3 rounded-full shadow-lg hover:bg-pink-600 text-lg">
+              Start Tracking 
             </button>
           </div>
         </div>
 
-        {/* RIGHT IMAGE */}
+        {/* RIGHT SIDE (SLIDER + FLOAT CARDS) */}
         <div className="relative mt-12 md:mt-0">
-          <div className="bg-white/60 backdrop-blur-lg p-8 rounded-[2rem] shadow-2xl border border-pink-100">
-            <img
-              src="https://img.freepik.com/free-vector/flat-woman-mark-date-menstruation-period-menstrual-calendar_88138-958.jpg"
-              alt="period tracker"
-              className="w-[320px] md:w-[400px] rounded-2xl"
-            />
-          </div>
 
-          {/* FLOAT CARDS */}
-          <div className="absolute -left-10 top-10 bg-white p-4 rounded-2xl shadow-lg">
+          {/* SLIDER replaces image */}
+          <Slider />
+
+          {/* FLOAT CARD 1 */}
+          <div className="absolute -left-10 top-10 bg-white p-4 rounded-2xl shadow-lg z-10">
             <p className="text-sm text-gray-500">Period in</p>
             <p className="font-bold text-pink-500">5 days</p>
           </div>
 
-          <div className="absolute -right-10 bottom-10 bg-white p-4 rounded-2xl shadow-lg">
+          {/* FLOAT CARD 2 */}
+          <div className="absolute -right-10 bottom-10 bg-white p-4 rounded-2xl shadow-lg z-10">
             <p className="text-sm text-gray-500">Cycle Health</p>
             <p className="font-bold text-green-500">Normal</p>
           </div>
+
         </div>
       </section>
 

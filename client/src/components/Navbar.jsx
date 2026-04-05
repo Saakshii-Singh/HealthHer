@@ -1,11 +1,26 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaHeart, FaUserCircle } from "react-icons/fa";
+import { useState, useEffect } from "react";
+
 
 export default function Navbar() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("userInfo"));
 
+const [darkMode, setDarkMode] = useState(
+  localStorage.getItem("theme")==="dark"
+);
+
+useEffect(()=>{
+  if(darkMode){
+    document.documentElement.classList.add("dark");
+    localStorage.setItem("theme","dark");
+  }else{
+    document.documentElement.classList.remove("dark");
+    localStorage.setItem("theme","light");
+  }
+},[darkMode]);
   return (
     <nav className="fixed top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-6xl z-50 
     bg-white/70 backdrop-blur-lg shadow-lg rounded-full px-6 py-3 flex justify-between items-center border border-pink-100">
@@ -66,6 +81,11 @@ export default function Navbar() {
             </Link>
           </>
         )}
+        <button
+        onClick={()=>setDarkMode(!darkMode)}
+        className="hover:text-pink-500 transition"        >
+           {darkMode ? "🌙" : "☀️"}
+        </button>
       </div>
     </nav>
   );
