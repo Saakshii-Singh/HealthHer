@@ -5,94 +5,152 @@ import { motion } from "framer-motion";
 
 function Dashboard() {
   const user = JSON.parse(localStorage.getItem("userInfo"));
-  const [data, setData] = useState(null);
   const navigate = useNavigate();
 
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  //  Dynamic Data
+  const trackers = [
+    {
+      title: "Period Tracker",
+      desc: "Track your cycle",
+      path: "/period-tracker",
+      color: "bg-pink-100",
+    },
+    {
+      title: "Ovulation",
+      desc: "Know fertile days",
+      path: "/ovulation",
+      color: "bg-purple-100",
+    },
+    {
+      title: "Health",
+      desc: "Track habits",
+      path: "/health",
+      color: "bg-green-100",
+    },
+  ];
+
+  const symptoms = [
+    { title: "Cramps", desc: "Pain during periods" },
+    { title: "Mood Swings", desc: "Emotional changes" },
+    { title: "Headache", desc: "Hormonal effect" },
+    { title: "Acne", desc: "Skin changes" },
+  ];
+
+  // 🔥 Fetch Data
   useEffect(() => {
     const fetchData = async () => {
-      const res = await axios.get(
-        `http://localhost:5000/api/period/${user._id}`
-      );
-      setData(res.data);
+      try {
+        setLoading(true);
+        const res = await axios.get(
+          `http://localhost:5000/api/period/${user._id}`
+        );
+        setData(res.data);
+      } catch (err) {
+        setError("Failed to load data");
+      } finally {
+        setLoading(false);
+      }
     };
+
     fetchData();
   }, []);
+
+  //  Reusable Card
+  const Card = ({ title, desc, color, onClick }) => (
+    <motion.div
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={onClick}
+      className={`${color} p-4 rounded-2xl cursor-pointer shadow-sm`}
+    >
+      <h3 className="font-semibold">{title}</h3>
+      <p className="text-sm text-gray-600">{desc}</p>
+    </motion.div>
+  );
 
   return (
     <motion.div
       className="min-h-screen bg-pink-50 p-6"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.6 }}
     >
-
       {/*  Header */}
-      <motion.h1
-        className="text-3xl font-bold mb-6"
-        initial={{ y: -30, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-      >
-        Welcome {user?.name} 
-      </motion.h1>
+      <h1 className="text-3xl font-bold mb-6">
+        Welcome {user?.name || "User"} 
+      </h1>
 
-      {/*  Insight Card */}
+      {/*  Loading */}
+      {loading && (
+        <div className="text-center text-gray-500 mb-6">
+          Loading your data...
+        </div>
+      )}
+
+      {/*  Error */}
+      {error && (
+        <div className="text-center text-red-500 mb-6">
+          {error}
+        </div>
+      )}
+
+      {/*  No Data */}
+      {!loading && !data && !error && (
+        <div className="bg-white p-5 rounded-xl shadow mb-6 text-center">
+          <p className="text-gray-600">
+            No period data found.
+          </p>
+          <button
+            onClick={() => navigate("/period-tracker")}
+            className="mt-3 bg-pink-400 text-white px-4 py-2 rounded-lg"
+          >
+            Start Tracking
+          </button>
+        </div>
+      )}
+
+      {/*  Insight */}
       {data && (
         <motion.div
           className="bg-white p-5 rounded-2xl shadow mb-6 border-l-4 border-pink-300"
-          initial={{ y: 40, opacity: 0 }}
+          initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
         >
-          <h2 className="text-lg font-semibold mb-2">Cycle Insight</h2>
-          <p className="text-sm text-gray-600">
-            Next Period: {new Date(data.nextPeriod).toDateString()}
+          <h2 className="font-semibold mb-2">Cycle Insight</h2>
+          <p>
+            Next Period:{" "}
+            {new Date(data.nextPeriod).toDateString()}
           </p>
           <p>Phase: {data.phase}</p>
-          <p className="mt-2 text-pink-500">{data.insight}</p>
+          <p className="text-pink-500 mt-1">{data.insight}</p>
         </motion.div>
       )}
 
-      {/* Trackers */}
+      {/*  Trackers */}
       <h2 className="text-xl font-semibold mb-3">Trackers</h2>
-
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        
-        {/* Card */}
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navigate("/period-tracker")}
-          className="bg-pink-100 p-4 rounded-2xl cursor-pointer shadow-sm"
-        >
-          <h3 className="font-semibold">Period Tracker</h3>
-          <p className="text-sm text-gray-600">Track your cycle</p>
-        </motion.div>
-
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          className="bg-purple-100 p-4 rounded-2xl shadow-sm"
-        >
-          <h3 className="font-semibold">Ovulation</h3>
-          <p className="text-sm text-gray-600">Know fertile days</p>
-        </motion.div>
-
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          className="bg-green-100 p-4 rounded-2xl shadow-sm"
-        >
-          <h3 className="font-semibold">Health</h3>
-          <p className="text-sm text-gray-600">Track habits</p>
-        </motion.div>
-
+        {trackers.map((item, i) => (
+          <Card
+            key={i}
+            {...item}
+            onClick={() => navigate(item.path)}
+          />
+        ))}
       </div>
 
       {/*  AI Assistant */}
       <motion.div
         className="bg-gradient-to-r from-pink-200 to-purple-200 p-5 rounded-2xl mb-6"
-        initial={{ x: -50, opacity: 0 }}
+        initial={{ x: -40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
       >
-        <h2 className="font-semibold text-lg">AI Assistant 🤖</h2>
-        <p className="text-sm mb-3">Ask anything about your health</p>
+        <h2 className="font-semibold text-lg">AI Assistant </h2>
+        <p className="text-sm mb-3">
+          Ask anything about your health
+        </p>
 
         <motion.button
           whileTap={{ scale: 0.9 }}
@@ -105,10 +163,12 @@ function Dashboard() {
       {/*  Chat */}
       <motion.div
         className="bg-white p-5 rounded-2xl shadow mb-6"
-        initial={{ x: 50, opacity: 0 }}
+        initial={{ x: 40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
       >
-        <h2 className="font-semibold text-lg">Anonymous Chat 💬</h2>
+        <h2 className="font-semibold text-lg">
+          Anonymous Chat 
+        </h2>
         <p className="text-sm text-gray-600 mb-3">
           Talk freely without revealing identity
         </p>
@@ -121,27 +181,16 @@ function Dashboard() {
         </motion.button>
       </motion.div>
 
-      {/* 🩺 Symptoms */}
-      <h2 className="text-xl font-semibold mb-3">Common Symptoms</h2>
+      {/*  Symptoms */}
+      <h2 className="text-xl font-semibold mb-3">
+        Common Symptoms
+      </h2>
 
       <div className="grid grid-cols-2 gap-4">
-        {["Cramps", "Mood Swings"].map((item, i) => (
-          <motion.div
-            key={i}
-            whileHover={{ scale: 1.05 }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.2 }}
-            className="bg-white p-4 rounded-xl shadow"
-          >
-            <h3>{item}</h3>
-            <p className="text-sm text-gray-500">
-              Tap to learn more
-            </p>
-          </motion.div>
+        {symptoms.map((item, i) => (
+          <Card key={i} {...item} color="bg-white" />
         ))}
       </div>
-
     </motion.div>
   );
 }
