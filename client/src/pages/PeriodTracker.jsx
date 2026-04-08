@@ -1,205 +1,96 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
 
 function PeriodTracker() {
-  const [lastDate, setLastDate] = useState("");
-  const [cycleLength, setCycleLength] = useState(28);
-  const [results, setResults] = useState(null);
-  const [history, setHistory] = useState([]);
-
   const user = JSON.parse(localStorage.getItem("userInfo"));
 
-  const today = new Date().getDate();
+  const [form, setForm] = useState({
+    lastPeriodDate: "",
+    cycleLength: "",
+    duration: "",
+  });
 
-  // 🔥 FETCH HISTORY
-  useEffect(() => {
-    if (!user) return;
+  const [result, setResult] = useState(null);
 
-    const fetchData = async () => {
-      try {
-        const { data } = await axios.get(
-          `http://localhost:5000/api/period/${user._id}`
-        );
-        setHistory(data);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    fetchData();
-  }, [user]);
-
-  // 🔥 PERIOD LOGIC
-  const isPeriodDay = (day) => {
-    if (!lastDate) return false;
-
-    const last = new Date(lastDate);
-    const current = new Date(
-      last.getFullYear(),
-      last.getMonth(),
-      day
-    );
-
-    const diff = Math.floor(
-      (current - last) / (1000 * 60 * 60 * 24)
-    );
-
-    return diff >= 0 && diff % cycleLength < 5;
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // 🔥 FERTILE LOGIC
-  const isFertileDay = (day) => {
-    if (!lastDate) return false;
-
-    const last = new Date(lastDate);
-    const current = new Date(
-      last.getFullYear(),
-      last.getMonth(),
-      day
-    );
-
-    const diff = Math.floor(
-      (current - last) / (1000 * 60 * 60 * 24)
-    );
-
-    return diff >= 12 && diff <= 16;
-  };
-
-  // 🔥 CALCULATE + SAVE
-  const calculatePeriod = async () => {
-    if (!lastDate) {
-      alert("Select a date");
-      return;
-    }
-
-    const last = new Date(lastDate);
-
-    const next = new Date(last);
-    next.setDate(next.getDate() + Number(cycleLength));
-
-    const fertileStart = new Date(last);
-    fertileStart.setDate(fertileStart.getDate() + 12);
-
-    const fertileEnd = new Date(last);
-    fertileEnd.setDate(fertileEnd.getDate() + 16);
-
-    setResults({
-      nextPeriod: next.toDateString(),
-      fertileWindow: `${fertileStart.toDateString()} - ${fertileEnd.toDateString()}`
-    });
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
     try {
-      await axios.post("http://localhost:5000/api/period", {
-        userId: user._id,
-        lastDate,
-        cycleLength
-      });
-
-      // refresh history
-      const { data } = await axios.get(
-        `http://localhost:5000/api/period/${user._id}`
+      const { data } = await axios.post(
+        "http://localhost:5000/api/period",
+        {
+          userId: user._id,
+          ...form,
+        }
       );
-      setHistory(data);
 
-    } catch (error) {
-      console.error(error);
+      setResult(data);
+    } catch (err) {
+      alert("Error saving data");
     }
   };
 
-return (
-  <div className="min-h-screen bg-gradient-to-br from-pink-100 via-white to-pink-200 flex justify-center items-center">
-
-    <div className="bg-white/80 backdrop-blur-xl p-8 rounded-3xl shadow-2xl w-[380px]">
-
-      <h2 className="text-3xl font-bold text-center text-pink-500 mb-6">
+  return (
+    <div className="max-w-md mx-auto mt-10 bg-pink-50 p-6 rounded-xl shadow">
+      <h2 className="text-2xl font-bold mb-4 text-center">
         Period Tracker 💖
       </h2>
 
-
-        {/* INPUTS */}
+      <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="date"
-          className="border p-2 mb-3 w-full rounded"
-          value={lastDate}
-          onChange={(e) => setLastDate(e.target.value)}
+          name="lastPeriodDate"
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
         />
 
         <input
           type="number"
-          className="border p-2 mb-3 w-full rounded"
-          value={cycleLength}
-          onChange={(e) => setCycleLength(e.target.value)}
+          name="cycleLength"
+          placeholder="Cycle Length (e.g. 28)"
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
         />
 
-        <button
-          onClick={calculatePeriod}
-          className="bg-pink-500 text-white px-4 py-2 rounded w-full"
-        >
-          Predict 💖
+        <input
+          type="number"
+          name="duration"
+          placeholder="Duration (e.g. 5)"
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+          required
+        />
+
+        <button className="w-full bg-pink-400 text-white py-2 rounded">
+          Track
         </button>
+      </form>
 
-        {/* RESULT */}
-        {results && (
-          <div className="mt-4 text-left">
-            <p>📅 Next Period: {results.nextPeriod}</p>
-            <p>🌸 Fertile Window: {results.fertileWindow}</p>
-          </div>
-        )}
+      {result && (
+        <div className="mt-6 bg-white p-4 rounded shadow">
+          <p>
+            <strong>Next Period:</strong>{" "}
+            {new Date(result.nextPeriod).toDateString()}
+          </p>
 
-        {/* HISTORY */}
-        <div className="mt-5 text-left">
-          <h3 className="font-bold text-pink-500 mb-2">
-            History 📅
-          </h3>
+          <p>
+            <strong>Ovulation:</strong>{" "}
+            {new Date(result.ovulation).toDateString()}
+          </p>
 
-          {history.length === 0 ? (
-            <p>No history yet</p>
-          ) : (
-            history.map((item, i) => (
-              <p key={i}>
-                {new Date(item.lastDate).toDateString()} (Cycle: {item.cycleLength})
-              </p>
-            ))
-          )}
+          <p>
+            <strong>Phase:</strong> {result.phase}
+          </p>
+
+          <p className="mt-2 text-pink-600">{result.insight}</p>
         </div>
-
-        {/* CALENDAR */}
-        <div className="mt-8">
-          <h3 className="text-pink-500 font-bold mb-3">
-            Calendar 📅
-          </h3>
-
-          <div className="grid grid-cols-7 gap-2 text-center">
-            
-            {/* DAYS */}
-            {["S","M","T","W","T","F","S"].map((d) => (
-              <div key={d} className="font-bold text-gray-600">
-                {d}
-              </div>
-            ))}
-
-            {/* DATES */}
-            {Array.from({ length: 30 }, (_, i) => i + 1).map((day) => (
-              <div
-                key={day}
-                className={`p-2 rounded-lg shadow ${
-                  isPeriodDay(day)
-                    ? "bg-pink-500 text-white"
-                    : isFertileDay(day)
-                    ? "bg-pink-200"
-                    : day === today
-                    ? "bg-pink-300"
-                    : "bg-white"
-                }`}
-              >
-                {day}
-              </div>
-            ))}
-
-          </div>
-        </div>
-
-      </div>
+      )}
     </div>
   );
 }
