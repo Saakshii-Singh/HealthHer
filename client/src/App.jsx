@@ -6,6 +6,7 @@ import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import PeriodTracker from "./pages/PeriodTracker";
 import Profile from "./pages/Profile";
+import AiAssistant from "./pages/AiAssistant";
 
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/tracker" element={<PeriodTracker />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/ai-assistant" element={<AiAssistant />} />
 
       </Routes>
     </BrowserRouter>

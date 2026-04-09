@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import periodRoutes from './routes/periodRoutes.js';
-
+import aiRoutes from './routes/aiRoutes.js';
 
 dotenv.config();
 connectDB();
@@ -15,6 +15,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/period", periodRoutes);
+app.use("/api/ai", aiRoutes);
 
 app.get("/",(req,res)=>{
     res.send("HealthHer API running...")
