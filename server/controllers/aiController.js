@@ -8,7 +8,7 @@ export const askAI = async (req, res) => {
         const { question } = req.body;
 
         const response = await openai.chat.completions.create({
-            model:"gpt-4.1-mini",
+            model: "gpt-3.5-turbo",
             messages:[
                 {
                     role:"system",
@@ -25,6 +25,7 @@ export const askAI = async (req, res) => {
             reply: response.choices[0].message.content,
         });
     } catch(error){
+        console.log(error);
         res.status(500).json({ error: "Failed to get AI response" });
     }
 };
