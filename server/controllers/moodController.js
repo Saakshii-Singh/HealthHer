@@ -1,38 +1,57 @@
-import Mood from '../models/moodMood.js';
+import Mood from "../models/moodModel.js";
 
+// Save Mood
 export const saveMood = async (req, res) => {
-    try {
-        const{
-            userId,
-            mood,
-            stressLevel,
-            painLevel,
-            note
-        }=req.body;
 
-        const newMood=await Mood.create({
+    try {
+
+        const {
             userId,
             mood,
             stressLevel,
             painLevel,
-            note
+            note,
+        } = req.body;
+
+        const newMood = await Mood.create({
+            userId,
+            mood,
+            stressLevel,
+            painLevel,
+            note,
         });
+
         res.status(201).json(newMood);
+
     } catch (error) {
+
         console.log(error);
+
         res.status(500).json({
-            message:"Server error",
+            message: "Server error",
         });
     }
 };
 
+// Get Mood History
 export const getMoods = async (req, res) => {
+
     try {
+
         const { userId } = req.params;
-        const moods = await Mood.find({ userId }).sort({ createdAt: -1 });
+
+        const moods = await Mood.find({
+            userId,
+        }).sort({
+            createdAt: -1,
+        });
+
         res.json(moods);
-    }catch (error) {
+
+    } catch (error) {
+
         console.log(error);
+
         res.status(500).json({
             message: "Server error",
         });
