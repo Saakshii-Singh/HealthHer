@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import PeriodTracker from "./pages/PeriodTracker";
 import Profile from "./pages/Profile";
 import AiAssistant from "./pages/AiAssistant";
+import Community from "./pages/Community";
 
 
 function App() {
@@ -22,7 +23,7 @@ function App() {
         <Route path="/tracker" element={<PeriodTracker />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/ai-assistant" element={<AiAssistant />} />
-
+        <Route path="/community" element={<Community />} />
       </Routes>
     </BrowserRouter>
   );

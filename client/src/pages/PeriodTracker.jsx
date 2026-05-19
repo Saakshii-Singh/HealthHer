@@ -3,6 +3,11 @@ import axios from "axios";
 
 function PeriodTracker() {
   const user = JSON.parse(localStorage.getItem("userInfo"));
+  if (!user) {
+  alert("Please login first");
+  return;
+}
+  console.log(user);
 
   const [form, setForm] = useState({
     lastPeriodDate: "",
@@ -88,7 +93,7 @@ function PeriodTracker() {
             <strong>Phase:</strong> {result.phase}
           </p>
 
-          <p className="mt-2 text-pink-600">{result.insight}</p>
+          <p className="mt-2 text-pink-600">{result.insights}</p>
         </div>
       )}
     </div>

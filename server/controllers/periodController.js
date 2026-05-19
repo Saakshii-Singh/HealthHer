@@ -58,7 +58,8 @@ const calculateData = (lastDate, cycleLength) => {
 export const savePeriod = async (req, res) => {
 
     try {
-
+        console.log("API HIT");
+        console.log(req.body);
         const {
             userId,
             lastPeriodDate,
