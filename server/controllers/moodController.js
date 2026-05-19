@@ -34,7 +34,7 @@ export const saveMood = async (req, res) => {
 };
 
 // Get Mood History
-export const getMoods = async (req, res) => {
+export const getMood = async (req, res) => {
 
     try {
 

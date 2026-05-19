@@ -2,7 +2,7 @@ import express from 'express';
 
 import{
     saveMood,
-    getMood,
+    getMood
 }from '../controllers/moodController.js';
 
 const router=express.Router();
