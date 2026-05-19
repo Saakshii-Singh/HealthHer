@@ -8,15 +8,47 @@
     color: #322026;
     font-family: 'Inter', system-ui, sans-serif;
   }
-  h1, h2, h3, h4 {
+
+  h1, h2, h3, h4, h5, h6 {
     font-family: 'Fraunces', Georgia, serif;
     color: #561d33;
     letter-spacing: -0.02em;
   }
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #f7f3f1; }
-::-webkit-scrollbar-thumb { background: #ebdcd9; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #d1b1b6; }
+/* Custom Scrollbar for premium aesthetic */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f7f3f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ebdcd9;
+  border-radius: 4px;
+  border: 2px solid #f7f3f1;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #d1b1b6;
+}
+
+/* Fade-in animation helper for pure CSS if needed */
+.animate-fade-in {
+  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

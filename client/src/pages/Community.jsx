@@ -2,15 +2,24 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { SiteHeader } from "../components/SiteHeader";
 import { SiteFooter } from "../components/SiteFooter";
-import { Send, Shield, Sparkles } from "lucide-react";
-import { motion } from "framer-motion";
+import { Send, Shield, Sparkles, Users } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const ROOMS = [
   { id: "general", label: "General", emoji: "🌸" },
   { id: "cycle", label: "Cycle & Periods", emoji: "🌙" },
   { id: "mind", label: "Mental Wellness", emoji: "🧘‍♀️" },
-  { id: "body", label: "Body & Care", emoji: "💗" }
+  { id: "body", label: "Body & Care", emoji: "💗" },
 ];
+
+const ADJECTIVES = ["Kind", "Brave", "Gentle", "Bright", "Calm", "Wild", "Soft", "Bold", "Sunny", "Quiet"];
+const FLOWERS = ["Lily", "Rose", "Iris", "Jasmine", "Poppy", "Daisy", "Violet", "Orchid", "Tulip", "Peony"];
+
+function randomNickname() {
+  const a = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+  const f = FLOWERS[Math.floor(Math.random() * FLOWERS.length)];
+  return `${a}${f}${Math.floor(Math.random() * 90 + 10)}`;
+}
 
 export default function Community() {
   const [nickname, setNickname] = useState("");
@@ -22,109 +31,305 @@ export default function Community() {
   const scrollRef = useRef(null);
   const socketRef = useRef(null);
 
+  // Initialize nickname
   useEffect(() => {
     const saved = localStorage.getItem("hh_nickname");
-    setNickname(saved || `BraveRose${Math.floor(Math.random() * 90 + 10)}`);
+    setNickname(saved || randomNickname());
   }, []);
 
+  // Initialize socket connection
   useEffect(() => {
     const socketUrl = window.location.hostname === "localhost" ? "http://localhost:5000" : window.location.origin;
-    const socket = io(socketUrl, { transports: ["websocket", "polling"] });
+    const socket = io(socketUrl, {
+      transports: ["websocket", "polling"]
+    });
     socketRef.current = socket;
 
-    socket.on("connect", () => setConnected(true));
-    socket.on("disconnect", () => setConnected(false));
+    socket.on("connect", () => {
+      setConnected(true);
+    });
+
+    socket.on("disconnect", () => {
+      setConnected(false);
+    });
+
+    // Listen for new messages
     socket.on("new_message", (message) => {
       if (message.room === room) {
-        setMessages(prev => {
-          if (prev.some(x => x._id === message._id)) return prev;
+        setMessages((prev) => {
+          if (prev.some((x) => x._id === message._id || x.id === message.id)) return prev;
           return [...prev, message];
         });
       }
     });
 
-    return () => socket.disconnect();
-  }, [room]);
+    return () => {
+      socket.disconnect();
+    };
+  }, [room]); // Re-subscribe if room changes to ensure dynamic setup
 
+  // Join room and load historical messages
   useEffect(() => {
     if (!socketRef.current) return;
+    
     setLoading(true);
+    
+    // Join the WebSocket room
     socketRef.current.emit("join_room", { room });
 
+    // Fetch message history from REST API
     fetch(`/api/messages/${room}`)
-      .then(res => res.json())
-      .then(data => { setMessages(data); setLoading(false); })
-      .catch(() => setLoading(false));
+      .then((res) => {
+        if (!res.ok) throw new Error("Could not load history");
+        return res.json();
+      })
+      .then((data) => {
+        setMessages(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error loading chat history:", err);
+        setLoading(false);
+      });
   }, [room, connected]);
 
+  // Autoscroll
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
   }, [messages]);
+
+  const saveNickname = (v) => {
+    const clean = v.trim().slice(0, 40);
+    setNickname(clean);
+    if (clean) localStorage.setItem("hh_nickname", clean);
+  };
+
+  const generateNewNickname = () => {
+    const newName = randomNickname();
+    setNickname(newName);
+    localStorage.setItem("hh_nickname", newName);
+  };
 
   const handleSend = async (e) => {
     e.preventDefault();
     const content = draft.trim();
+    const name = nickname.trim() || randomNickname();
     if (!content) return;
 
-    const payload = { nickname, content, room };
+    if (content.length > 1000) {
+      alert("Message too long (max 1000 characters)");
+      return;
+    }
 
+    const payload = {
+      nickname: name,
+      content,
+      room
+    };
+
+    // Emit message to Socket.io server
     if (socketRef.current && connected) {
       socketRef.current.emit("send_message", payload);
       setDraft("");
     } else {
-      const res = await fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) {
-        const saved = await res.json();
-        setMessages(prev => [...prev, saved]);
-        setDraft("");
+      // Fallback to HTTP POST if socket is disconnected
+      try {
+        const res = await fetch("/api/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const savedMsg = await res.json();
+          setMessages((prev) => [...prev, savedMsg]);
+          setDraft("");
+        } else {
+          alert("Could not send message.");
+        }
+      } catch (err) {
+        console.error("Failed to send message over HTTP:", err);
+        alert("Failed to send message.");
       }
     }
   };
 
+  const avatarColor = useMemo(() => (name) => {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) {
+      h = (h * 31 + name.charCodeAt(i)) % 360;
+    }
+    return `hsl(${h}, 70%, 85%)`;
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
-      <div className="mx-auto max-w-6xl px-5 py-8 grid gap-6 lg:grid-cols-[260px_1fr]">
-        <aside className="space-y-4">
-          <div className="bg-white p-4 border border-border rounded-2xl shadow-soft">
-            <label className="text-2xs uppercase tracking-wider block font-bold text-plum">Chat Name</label>
-            <input value={nickname} onChange={e => { setNickname(e.target.value); localStorage.setItem("hh_nickname", e.target.value); }} className="w-full mt-2 text-xs border border-border p-2 rounded-xl outline-none" />
+
+      <section className="relative overflow-hidden py-10">
+        <div className="absolute inset-0 bg-gradient-warm opacity-40" aria-hidden />
+        <div className="relative mx-auto max-w-6xl px-5">
+          <span className="inline-flex items-center gap-2 rounded-full bg-card/80 backdrop-blur px-4 py-1.5 text-xs font-semibold border border-border shadow-soft text-primary">
+            <Shield className="h-3.5 w-3.5" />
+            Anonymous · Secure Connections · Zero accounts required
+          </span>
+          <h1 className="mt-4 font-display text-4xl md:text-5xl font-semibold text-plum">Anonymous Chat</h1>
+          <p className="mt-2 max-w-2xl text-muted-foreground text-sm md:text-base">
+            Share advice, seek support, and talk with other women globally. Choose a room, define your alias, and write freely.
+          </p>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-5 pb-16 grid gap-6 lg:grid-cols-[280px_1fr]">
+        {/* Sidebar */}
+        <aside className="space-y-6">
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+            <label className="text-xs uppercase tracking-wider text-plum font-bold block mb-1">Your Alias</label>
+            <input
+              value={nickname}
+              onChange={(e) => saveNickname(e.target.value)}
+              placeholder="Pick a nickname"
+              maxLength={40}
+              className="mt-2 w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
+            />
+            <button
+              onClick={generateNewNickname}
+              className="mt-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors font-medium"
+            >
+              <Sparkles className="h-3.5 w-3.5" /> Generate a floral nickname
+            </button>
           </div>
-          <div className="bg-white p-4 border border-border rounded-2xl">
-            <h4 className="text-2xs font-bold uppercase text-plum mb-2">Channels</h4>
-            <div className="flex flex-col gap-1">
-              {ROOMS.map(r => (
-                <button key={r.id} onClick={() => setRoom(r.id)} className={`text-left text-xs p-2 rounded-xl ${room === r.id ? "bg-secondary text-plum font-bold" : "hover:bg-muted"}`}>{r.emoji} {r.label}</button>
-              ))}
+
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+            <p className="text-xs uppercase tracking-wider text-plum font-bold mb-3">Chat Channels</p>
+            <div className="flex flex-col gap-1.5">
+              {ROOMS.map((r) => {
+                const active = room === r.id;
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => setRoom(r.id)}
+                    className={`flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm transition-all text-left ${
+                      active 
+                        ? "bg-gradient-primary text-white shadow-soft font-bold scale-[1.02]" 
+                        : "hover:bg-secondary/60 text-muted-foreground hover:text-foreground font-semibold"
+                    }`}
+                  >
+                    <span className="text-base">{r.emoji}</span>
+                    <span>{r.label}</span>
+                  </button>
+                );
+              })}
             </div>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-secondary/30 p-5 text-xs text-muted-foreground">
+            <p className="font-bold text-plum flex items-center gap-1.5 mb-2.5"><Users className="h-3.5 w-3.5" /> Community Guidelines</p>
+            <ul className="space-y-1.5 list-disc pl-4 font-medium leading-relaxed">
+              <li>Be extremely respectful & kind.</li>
+              <li>Never share phone numbers or social handles.</li>
+              <li>This is not clinical medical advice.</li>
+            </ul>
           </div>
         </aside>
 
-        <div className="bg-white border border-border rounded-3xl shadow-soft flex flex-col h-[500px]">
-          <header className="border-b border-border p-4 bg-secondary/20 flex justify-between text-xs text-plum font-bold">
-            <span>{ROOMS.find(r => r.id === room)?.emoji} {ROOMS.find(r => r.id === room)?.label} Room</span>
-            <span>{connected ? "Realtime Active" : "Offline mode"}</span>
-          </header>
-          
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
-            {loading ? <p className="text-center text-xs text-muted-foreground py-10">Loading...</p> : messages.map((m, idx) => (
-              <div key={idx} className={`flex flex-col ${m.nickname === nickname ? "items-end" : "items-start"}`}>
-                <span className="text-3xs text-muted-foreground font-bold mb-0.5">{m.nickname}</span>
-                <span className={`text-xs px-3.5 py-2 rounded-2xl ${m.nickname === nickname ? "bg-gradient-primary text-white rounded-tr-none" : "bg-secondary text-plum rounded-tl-none"}`}>{m.content}</span>
+        {/* Chat window */}
+        <div className="flex flex-col rounded-2xl border border-border bg-card shadow-soft overflow-hidden min-h-[550px] max-h-[650px]">
+          <header className="flex items-center justify-between border-b border-border/60 px-5 py-4 bg-secondary/30">
+            <div>
+              <h2 className="font-display text-xl font-bold text-plum">
+                {ROOMS.find((r) => r.id === room)?.emoji} {ROOMS.find((r) => r.id === room)?.label} Room
+              </h2>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                <span className={`h-2 w-2 rounded-full ${connected ? "bg-green-500 animate-pulse" : "bg-red-400"}`} />
+                <span>{connected ? "Connected to realtime stream" : "Reconnecting..."}</span>
               </div>
-            ))}
+            </div>
+            <span className="text-xs font-semibold bg-white border border-border px-3 py-1 rounded-full text-plum">{messages.length} log entries</span>
+          </header>
+
+          {/* Message List */}
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 space-y-4 bg-background/25">
+            {loading ? (
+              <div className="text-center text-sm text-muted-foreground py-16 flex flex-col items-center justify-center gap-2">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                <span>Fetching conversations...</span>
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="text-center text-sm text-muted-foreground py-20 font-medium">
+                No chat logs here yet. Say something kind to start the circle 💗
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {messages.map((m, index) => {
+                  const mine = m.nickname === nickname;
+                  const keyId = m._id || m.id || index;
+                  return (
+                    <motion.div 
+                      key={keyId}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className={`flex gap-3 ${mine ? "flex-row-reverse" : ""}`}
+                    >
+                      <div
+                        className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold shadow-sm select-none"
+                        style={{ backgroundColor: avatarColor(m.nickname), color: "#561d33" }}
+                      >
+                        {m.nickname.charAt(0).toUpperCase()}
+                      </div>
+                      <div className={`max-w-[75%] ${mine ? "items-end text-right" : ""} flex flex-col`}>
+                        <div className="text-xs text-muted-foreground mb-1 font-medium">
+                          <span className="font-bold text-plum">{m.nickname}</span>
+                          <span className="mx-1.5">·</span>
+                          <time>{new Date(m.createdAt || m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time>
+                        </div>
+                        <div
+                          className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-soft border ${
+                            mine
+                              ? "bg-gradient-primary text-white border-primary/20 rounded-tr-sm"
+                              : "bg-card text-foreground border-border rounded-tl-sm"
+                          }`}
+                        >
+                          {m.content}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          <form onSubmit={handleSend} className="border-t border-border p-3 flex gap-2">
-            <input value={draft} onChange={e => setDraft(e.target.value)} placeholder="Type a supportive word..." className="flex-1 text-xs border p-3 rounded-xl outline-none" />
-            <button type="submit" className="bg-gradient-primary text-white p-3 rounded-xl"><Send className="h-4 w-4" /></button>
+          {/* Form */}
+          <form onSubmit={handleSend} className="border-t border-border/60 p-3 flex items-end gap-2 bg-card">
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend(e);
+                }
+              }}
+              rows={1}
+              maxLength={1000}
+              placeholder={`Share advice with the ${ROOMS.find((r) => r.id === room)?.label} circle...`}
+              className="flex-1 resize-none rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary max-h-32 transition-all"
+            />
+            <button
+              type="submit"
+              disabled={!draft.trim() || !connected}
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-primary text-white shadow-soft hover:shadow-glow hover:scale-[1.03] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 disabled:shadow-none"
+              aria-label="Send message"
+            >
+              <Send className="h-4 w-4" />
+            </button>
           </form>
         </div>
-      </div>
+      </section>
+
       <SiteFooter />
     </div>
   );
