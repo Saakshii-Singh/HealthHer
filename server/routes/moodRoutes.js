@@ -1,11 +1,11 @@
-import express from 'express';
+import express from "express";
+import { getMoodLogs, createMoodLog } from "../controllers/moodController.js";
+import { protect } from "../utils/authMiddleware.js";
 
-import{
-    saveMood,
-    getMood
-}from '../controllers/moodController.js';
+const router = express.Router();
 
-const router=express.Router();
-router.post('/save',saveMood);
-router.get('/:userId',getMood);
+router.route("/")
+  .get(protect, getMoodLogs)
+  .post(protect, createMoodLog);
+
 export default router;

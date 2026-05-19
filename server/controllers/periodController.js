@@ -1,131 +1,37 @@
-import Period from "../models/periodModel.js";
-const calculateData = (lastDate, cycleLength) => {
+import Cycle from "../models/Cycle.js";
 
-    if (!lastDate || isNaN(new Date(lastDate))) {
-        return {
-            nextPeriod: null,
-            ovulation: null,
-            phase: "Unknown",
-            insights: "Please enter a valid period date.",
-        };
+// @desc    Get all cycle entries for authenticated user
+// @route   GET /api/cycle
+export async function getCycleLogs(req, res) {
+  try {
+    const logs = await Cycle.find({ userId: req.user._id })
+      .sort({ startDate: -1 });
+    res.json(logs);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+// @desc    Create a new cycle log
+// @route   POST /api/cycle
+export async function createCycleLog(req, res) {
+  const { startDate, duration, cycleLength, symptoms } = req.body;
+
+  try {
+    if (!startDate) {
+      return res.status(400).json({ message: "Start date is required" });
     }
 
-    const last = new Date(lastDate);
+    const log = await Cycle.create({
+      userId: req.user._id,
+      startDate: new Date(startDate),
+      duration: duration || 5,
+      cycleLength: cycleLength || 28,
+      symptoms: symptoms || [],
+    });
 
-    const nextPeriod = new Date(last);
-    nextPeriod.setDate(last.getDate() + Number(cycleLength));
-
-    const ovulation = new Date(nextPeriod);
-    ovulation.setDate(nextPeriod.getDate() - 14);
-
-    const today = new Date();
-
-    const diff = Math.floor(
-        (today - last) / (1000 * 60 * 60 * 24)
-    );
-
-    const day = diff % cycleLength;
-
-    let phase = "";
-
-    if (day < 5) phase = "Menstrual";
-    else if (day < 14) phase = "Follicular";
-    else if (day < 19) phase = "Ovulation";
-    else phase = "Luteal";
-
-    const insights = {
-        Menstrual:
-            "Your period is currently active. It's a good time to focus on self-care and rest.",
-
-        Follicular:
-            "Your body is preparing for ovulation. Consider engaging in light exercise and maintaining a balanced diet.",
-
-        Ovulation:
-            "You are in your fertile window. This is the best time for conception if you're trying to conceive.",
-
-        Luteal:
-            "Your body is preparing for the next period. Focus on stress reduction and maintaining a healthy lifestyle.",
-    };
-
-    return {
-        nextPeriod,
-        ovulation,
-        phase,
-        insights: insights[phase],
-    };
-};
-
-export const savePeriod = async (req, res) => {
-
-    try {
-        console.log("API HIT");
-        console.log(req.body);
-        const {
-            userId,
-            lastPeriodDate,
-            cycleLength,
-            duration,
-        } = req.body;
-
-        // Validation
-        if (
-            !lastPeriodDate ||
-            !cycleLength ||
-            !duration
-        ) {
-            return res.status(400).json({
-                message: "All fields are required",
-            });
-        }
-
-        // Calculate Data
-        const result = calculateData(
-            lastPeriodDate,
-            cycleLength
-        );
-
-        // Save to DB
-        const data = await Period.create({
-            userId,
-            lastPeriodDate,
-            cycleLength,
-            duration,
-            ...result,
-        });
-
-        res.status(201).json(data);
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            message: "Server error",
-        });
-    }
-};
-
-// Get Period Data
-export const getPeriod = async (req, res) => {
-
-    try {
-
-        const { userId } = req.params;
-
-        const data = await Period.find({
-            userId,
-        }).sort({
-            createdAt: -1,
-        });
-
-        res.json(data);
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            message: "Server error",
-        });
-    }
-};
+    res.status(201).json(log);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}

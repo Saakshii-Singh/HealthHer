@@ -1,231 +1,131 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { io } from "socket.io-client";
+import { SiteHeader } from "../components/SiteHeader";
+import { SiteFooter } from "../components/SiteFooter";
+import { Send, Shield, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 
-function Community() {
-  const [posts, setPosts] = useState([]);
+const ROOMS = [
+  { id: "general", label: "General", emoji: "🌸" },
+  { id: "cycle", label: "Cycle & Periods", emoji: "🌙" },
+  { id: "mind", label: "Mental Wellness", emoji: "🧘‍♀️" },
+  { id: "body", label: "Body & Care", emoji: "💗" }
+];
 
-  const [form, setForm] = useState({
-    title: "",
-    content: "",
-    mood: "",
-    category: "",
-  });
+export default function Community() {
+  const [nickname, setNickname] = useState("");
+  const [room, setRoom] = useState("general");
+  const [messages, setMessages] = useState([]);
+  const [draft, setDraft] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [connected, setConnected] = useState(false);
+  const scrollRef = useRef(null);
+  const socketRef = useRef(null);
 
   useEffect(() => {
-    fetchPosts();
+    const saved = localStorage.getItem("hh_nickname");
+    setNickname(saved || `BraveRose${Math.floor(Math.random() * 90 + 10)}`);
   }, []);
 
-  // FETCH POSTS
-  const fetchPosts = async () => {
-    try {
-      const res = await axios.get(
-        "http://localhost:5000/api/community/posts"
-      );
+  useEffect(() => {
+    const socketUrl = window.location.hostname === "localhost" ? "http://localhost:5000" : window.location.origin;
+    const socket = io(socketUrl, { transports: ["websocket", "polling"] });
+    socketRef.current = socket;
 
-      setPosts(res.data);
+    socket.on("connect", () => setConnected(true));
+    socket.on("disconnect", () => setConnected(false));
+    socket.on("new_message", (message) => {
+      if (message.room === room) {
+        setMessages(prev => {
+          if (prev.some(x => x._id === message._id)) return prev;
+          return [...prev, message];
+        });
+      }
+    });
 
-    } catch (error) {
-      console.log(error);
-    }
-  };
+    return () => socket.disconnect();
+  }, [room]);
 
-  // CREATE POST
-  const handleSubmit = async (e) => {
+  useEffect(() => {
+    if (!socketRef.current) return;
+    setLoading(true);
+    socketRef.current.emit("join_room", { room });
+
+    fetch(`/api/messages/${room}`)
+      .then(res => res.json())
+      .then(data => { setMessages(data); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [room, connected]);
+
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages]);
+
+  const handleSend = async (e) => {
     e.preventDefault();
+    const content = draft.trim();
+    if (!content) return;
 
-    try {
+    const payload = { nickname, content, room };
 
-      await axios.post(
-        "http://localhost:5000/api/community/create",
-        form
-      );
-
-      fetchPosts();
-
-      setForm({
-        title: "",
-        content: "",
-        mood: "",
-        category: "",
+    if (socketRef.current && connected) {
+      socketRef.current.emit("send_message", payload);
+      setDraft("");
+    } else {
+      const res = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       });
-
-    } catch (error) {
-      console.log(error);
+      if (res.ok) {
+        const saved = await res.json();
+        setMessages(prev => [...prev, saved]);
+        setDraft("");
+      }
     }
   };
 
   return (
-    <motion.div
-      className="min-h-screen bg-pink-50 p-6"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-
-      {/* HEADING */}
-      <motion.h1
-        className="text-4xl font-bold text-pink-600 mb-2"
-        initial={{ y: -40, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        💜 HealthHer Community
-      </motion.h1>
-
-      <p className="text-gray-600 mb-8">
-        Share your thoughts safely and anonymously.
-      </p>
-
-      {/* FORM */}
-      <motion.form
-        onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-2xl shadow-md space-y-4"
-        initial={{ y: 50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-
-        {/* TITLE */}
-        <input
-          type="text"
-          placeholder="Enter title..."
-          value={form.title}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              title: e.target.value,
-            })
-          }
-          className="w-full border border-pink-200 p-3 rounded-lg outline-none focus:border-pink-500"
-        />
-
-        {/* CONTENT */}
-        <textarea
-          placeholder="Share your feelings..."
-          value={form.content}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              content: e.target.value,
-            })
-          }
-          className="w-full border border-pink-200 p-3 rounded-lg outline-none focus:border-pink-500 h-32"
-        />
-
-        {/* MOOD */}
-        <select
-          value={form.mood}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              mood: e.target.value,
-            })
-          }
-          className="w-full border border-pink-200 p-3 rounded-lg outline-none focus:border-pink-500"
-        >
-          <option value="">Select Mood</option>
-          <option value=" Happy">😊 Happy</option>
-          <option value=" Sad">😢 Sad</option>
-          <option value=" Anxious">😰 Anxious</option>
-          <option value=" Angry">😡 Angry</option>
-          <option value=" Lonely">😔 Lonely</option>
-        </select>
-
-        {/* CATEGORY */}
-        <select
-          value={form.category}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              category: e.target.value,
-            })
-          }
-          className="w-full border border-pink-200 p-3 rounded-lg outline-none focus:border-pink-500"
-        >
-          <option value="">Select Category</option>
-          <option value="Periods">Periods</option>
-          <option value="Mental Health">
-            Mental Health
-          </option>
-          <option value="Stress">Stress</option>
-          <option value="PCOS">PCOS</option>
-          <option value="Relationships">
-            Relationships
-          </option>
-        </select>
-
-        {/* BUTTON */}
-        <motion.button
-          type="submit"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="bg-pink-500 text-white px-6 py-3 rounded-xl font-semibold shadow-md"
-        >
-          Post Anonymously
-        </motion.button>
-      </motion.form>
-
-      {/* POSTS */}
-      <div className="mt-10 space-y-5">
-
-        {posts.map((post) => (
-
-          <motion.div
-            key={post._id}
-            className="bg-white p-5 rounded-2xl shadow-md"
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            whileHover={{
-              scale: 1.02,
-            }}
-          >
-
-            {/* TITLE */}
-            <h2 className="text-2xl font-bold text-pink-600">
-              {post.title}
-            </h2>
-
-            {/* CONTENT */}
-            <p className="text-gray-700 mt-3">
-              {post.content}
-            </p>
-
-            {/* TAGS */}
-            <div className="flex gap-3 mt-4">
-
-              <span className="bg-pink-100 text-pink-600 px-3 py-1 rounded-full text-sm">
-                {post.mood}
-              </span>
-
-              <span className="bg-purple-100 text-purple-600 px-3 py-1 rounded-full text-sm">
-                {post.category}
-              </span>
-
+    <div className="min-h-screen bg-background">
+      <SiteHeader />
+      <div className="mx-auto max-w-6xl px-5 py-8 grid gap-6 lg:grid-cols-[260px_1fr]">
+        <aside className="space-y-4">
+          <div className="bg-white p-4 border border-border rounded-2xl shadow-soft">
+            <label className="text-2xs uppercase tracking-wider block font-bold text-plum">Chat Name</label>
+            <input value={nickname} onChange={e => { setNickname(e.target.value); localStorage.setItem("hh_nickname", e.target.value); }} className="w-full mt-2 text-xs border border-border p-2 rounded-xl outline-none" />
+          </div>
+          <div className="bg-white p-4 border border-border rounded-2xl">
+            <h4 className="text-2xs font-bold uppercase text-plum mb-2">Channels</h4>
+            <div className="flex flex-col gap-1">
+              {ROOMS.map(r => (
+                <button key={r.id} onClick={() => setRoom(r.id)} className={`text-left text-xs p-2 rounded-xl ${room === r.id ? "bg-secondary text-plum font-bold" : "hover:bg-muted"}`}>{r.emoji} {r.label}</button>
+              ))}
             </div>
+          </div>
+        </aside>
 
-            {/* FOOTER */}
-            <div className="flex justify-between items-center mt-5">
+        <div className="bg-white border border-border rounded-3xl shadow-soft flex flex-col h-[500px]">
+          <header className="border-b border-border p-4 bg-secondary/20 flex justify-between text-xs text-plum font-bold">
+            <span>{ROOMS.find(r => r.id === room)?.emoji} {ROOMS.find(r => r.id === room)?.label} Room</span>
+            <span>{connected ? "Realtime Active" : "Offline mode"}</span>
+          </header>
+          
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+            {loading ? <p className="text-center text-xs text-muted-foreground py-10">Loading...</p> : messages.map((m, idx) => (
+              <div key={idx} className={`flex flex-col ${m.nickname === nickname ? "items-end" : "items-start"}`}>
+                <span className="text-3xs text-muted-foreground font-bold mb-0.5">{m.nickname}</span>
+                <span className={`text-xs px-3.5 py-2 rounded-2xl ${m.nickname === nickname ? "bg-gradient-primary text-white rounded-tr-none" : "bg-secondary text-plum rounded-tl-none"}`}>{m.content}</span>
+              </div>
+            ))}
+          </div>
 
-              <p className="text-sm text-gray-500">
-                👤 {post.anonymousName}
-              </p>
-
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                className="text-pink-500"
-              >
-                 Like
-              </motion.button>
-
-            </div>
-
-          </motion.div>
-        ))}
+          <form onSubmit={handleSend} className="border-t border-border p-3 flex gap-2">
+            <input value={draft} onChange={e => setDraft(e.target.value)} placeholder="Type a supportive word..." className="flex-1 text-xs border p-3 rounded-xl outline-none" />
+            <button type="submit" className="bg-gradient-primary text-white p-3 rounded-xl"><Send className="h-4 w-4" /></button>
+          </form>
+        </div>
       </div>
-    </motion.div>
+      <SiteFooter />
+    </div>
   );
 }
-
-export default Community;

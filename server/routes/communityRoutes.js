@@ -1,12 +1,9 @@
-import express from 'express';
-import {
-    createPost,
-    getPosts,
-
-}from '../controllers/communityController.js';
+import express from "express";
+import { getMessagesByRoom, createMessage } from "../controllers/communityController.js";
 
 const router = express.Router();
 
-router.post('/posts', createPost);
-router.get('/posts', getPosts);
+router.get("/:room", getMessagesByRoom);
+router.post("/", createMessage);
+
 export default router;

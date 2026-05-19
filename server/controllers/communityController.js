@@ -1,54 +1,43 @@
-import CommunityPost from "../models/CommunityPost.js";
+import Message from "../models/Message.js";
 
-import {
-  generateAnonymousName,
-} from "../utils/generateAnonymousName.js";
+// @desc    Get historical room messages
+// @route   GET /api/messages/:room
+export async function getMessagesByRoom(req, res) {
+  const { room } = req.params;
 
-
-// CREATE POST
-export const createPost = async (req, res) => {
   try {
-    const {
-      title,
-      content,
-      mood,
-      category,
-    } = req.body;
+    const limit = parseInt(req.query.limit) || 200;
+    
+    // Fetch latest messages from the DB
+    const messages = await Message.find({ room })
+      .sort({ createdAt: -1 })
+      .limit(limit);
 
-    const post = await CommunityPost.create({
-      anonymousName:
-        generateAnonymousName(),
-
-      title,
-      content,
-      mood,
-      category,
-    });
-
-    res.status(201).json(post);
-
+    // Return in chronological order
+    res.json(messages.reverse());
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
-};
+}
 
+// @desc    Create/Save a chat message (REST fallback)
+// @route   POST /api/messages
+export async function createMessage(req, res) {
+  const { nickname, content, room } = req.body;
 
-// GET POSTS
-export const getPosts = async (req, res) => {
   try {
+    if (!nickname || !content) {
+      return res.status(400).json({ message: "Nickname and content are required" });
+    }
 
-    const posts =
-      await CommunityPost.find().sort({
-        createdAt: -1,
-      });
-
-    res.status(200).json(posts);
-
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
+    const newMessage = await Message.create({
+      nickname,
+      content,
+      room: room || "general"
     });
+
+    res.status(201).json(newMessage);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
-};
+}

@@ -1,94 +1,66 @@
-import React from "react";
-import Slider from "../components/Slider";
-import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { Heart, ShieldCheck, MessagesSquare, Flower2, ArrowRight, Calendar, Smile, BrainCircuit } from "lucide-react";
+import heroImg from "../assets/hero.png";
+import { SiteHeader } from "../components/SiteHeader";
+import { SiteFooter } from "../components/SiteFooter";
 
 export default function Home() {
-  const navigate=useNavigate();
   return (
-    <div className="bg-gradient-to-br from-pink-50 via-white to-pink-100 min-h-screen">
+    <div className="min-h-screen bg-background">
+      <SiteHeader />
 
-      {/* HERO SECTION */}
-      <section className="pt-36 px-6 md:px-16 flex flex-col md:flex-row items-center justify-between max-w-6xl mx-auto">
-        
-        {/* LEFT */}
-        <div className="max-w-xl">
-          <h1 className="text-5xl md:text-7xl font-extrabold text-gray-800 leading-tight">
-            Your personal
-            <span className="block text-pink-500">
-              health companion
+      <section className="relative overflow-hidden pt-12 pb-16">
+        <div className="absolute inset-0 bg-gradient-warm opacity-60" />
+        <div className="mx-auto max-w-6xl px-5 grid gap-12 md:grid-cols-2 items-center">
+          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-border px-3.5 py-1 text-xs font-semibold text-muted-foreground shadow-sm">
+              <Flower2 className="h-3.5 w-3.5 text-primary" /> Women-centric wellness
             </span>
-          </h1>
+            <h1 className="mt-6 font-display text-5xl font-semibold leading-[1.1] text-plum">
+              Your health,<br />
+              <span className="text-primary">your community</span>,<br />
+              your space.
+            </h1>
+            <p className="mt-4 text-muted-foreground leading-relaxed text-sm md:text-base">
+              HealthHer offers cycle logs, daily emotional diaries, a conversational AI counselor, and a fully anonymous community circle.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link to="/community" className="bg-gradient-primary text-white rounded-full px-6 py-3 text-sm font-bold shadow-soft hover:shadow-glow flex items-center gap-1">
+                Anonymous Chat <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link to="/dashboard" className="bg-white border border-border text-plum rounded-full px-6 py-3 text-sm font-bold hover:bg-secondary">
+                Trackers Hub
+              </Link>
+            </div>
+          </motion.div>
 
-          <p className="mt-6 text-gray-600 text-lg">
-            Track periods, understand your body, and feel empowered every day.
-          </p>
-
-          <p className="mt-6 text-pink-600 font-semibold text-lg italic">
-            “Your period is powerful — not something to hide, but something to understand.”
-          </p>
-
-          <div className="mt-8">
-            <button 
-            onClick={()=>navigate("/racker")}
-            className="bg-pink-500 text-white px-8 py-3 rounded-full shadow-lg hover:bg-pink-600 text-lg">
-              Start Tracking 
-            </button>
-          </div>
-        </div>
-
-        {/* RIGHT SIDE (SLIDER + FLOAT CARDS) */}
-        <div className="relative mt-12 md:mt-0">
-
-          {/* SLIDER replaces image */}
-          <Slider />
-
-          {/* FLOAT CARD 1 */}
-          <div className="absolute -left-10 top-10 bg-white p-4 rounded-2xl shadow-lg z-10">
-            <p className="text-sm text-gray-500">Period in</p>
-            <p className="font-bold text-pink-500">5 days</p>
-          </div>
-
-          {/* FLOAT CARD 2 */}
-          <div className="absolute -right-10 bottom-10 bg-white p-4 rounded-2xl shadow-lg z-10">
-            <p className="text-sm text-gray-500">Cycle Health</p>
-            <p className="font-bold text-green-500">Normal</p>
-          </div>
-
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }} className="relative">
+            <img src={heroImg} alt="Women wellness" className="rounded-3xl shadow-glow border border-border/40 w-full" />
+          </motion.div>
         </div>
       </section>
 
-      {/* FEATURES SECTION */}
-      <section className="mt-24 text-center px-6 pb-20">
-        <h2 className="text-3xl font-bold text-gray-800">
-          What can you do with HealthHer?
-        </h2>
-
-        <div className="mt-12 grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          
-          <div className="bg-white p-6 rounded-2xl shadow hover:scale-105 transition">
-            <h3 className="font-semibold text-lg">Track Cycle</h3>
-            <p className="text-gray-500 text-sm mt-2">
-              Know your patterns
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl shadow hover:scale-105 transition">
-            <h3 className="font-semibold text-lg">Fertility Insights</h3>
-            <p className="text-gray-500 text-sm mt-2">
-              Understand your body
-            </p>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl shadow hover:scale-105 transition">
-            <h3 className="font-semibold text-lg">Health Tips</h3>
-            <p className="text-gray-500 text-sm mt-2">
-              Daily suggestions
-            </p>
-          </div>
-
+      {/* Pillars */}
+      <section className="mx-auto max-w-6xl px-5 py-12">
+        <h2 className="font-display text-3xl font-bold text-center text-plum mb-8">Pillars of Care</h2>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { icon: Calendar, title: "Cycle Tracker", text: "Track flow dates, predict windows, and log symptoms." },
+            { icon: Smile, title: "Mood Journal", text: "Spot emotional peaks & luteal drops using tracking statistics." },
+            { icon: BrainCircuit, title: "AI Companion", text: "Ask health and care queries 24/7 in total privacy." },
+            { icon: MessagesSquare, title: "Peer Circles", text: "Realtime anonymous chat circles without accounts." }
+          ].map((item, idx) => (
+            <div key={idx} className="bg-white border border-border p-6 rounded-2xl shadow-soft hover:shadow-glow transition-all">
+              <item.icon className="h-8 w-8 text-primary mb-4" />
+              <h3 className="font-bold text-plum text-lg">{item.title}</h3>
+              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{item.text}</p>
+            </div>
+          ))}
         </div>
       </section>
 
+      <SiteFooter />
     </div>
   );
 }

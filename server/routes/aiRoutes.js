@@ -1,8 +1,8 @@
 import express from "express";
-import {askAI} from "../controllers/aiController.js";
+import { generateCompanionResponse } from "../controllers/aiController.js";
 
 const router = express.Router();
 
-router.post("/", askAI);
+router.post("/chat", generateCompanionResponse);
 
 export default router;

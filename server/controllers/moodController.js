@@ -1,59 +1,36 @@
-import Mood from "../models/moodModel.js";
+import Mood from "../models/Mood.js";
 
-// Save Mood
-export const saveMood = async (req, res) => {
+// @desc    Get all mood logs for the authenticated user
+// @route   GET /api/moods
+export async function getMoodLogs(req, res) {
+  try {
+    const moods = await Mood.find({ userId: req.user._id })
+      .sort({ createdAt: -1 });
+    res.json(moods);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
 
-    try {
+// @desc    Log a new mood entry
+// @route   POST /api/moods
+export async function createMoodLog(req, res) {
+  const { score, note, symptoms } = req.body;
 
-        const {
-            userId,
-            mood,
-            stressLevel,
-            painLevel,
-            note,
-        } = req.body;
-
-        const newMood = await Mood.create({
-            userId,
-            mood,
-            stressLevel,
-            painLevel,
-            note,
-        });
-
-        res.status(201).json(newMood);
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            message: "Server error",
-        });
+  try {
+    if (!score) {
+      return res.status(400).json({ message: "Mood score is required" });
     }
-};
 
-// Get Mood History
-export const getMood = async (req, res) => {
+    const mood = await Mood.create({
+      userId: req.user._id,
+      score,
+      note,
+      symptoms: symptoms || [],
+    });
 
-    try {
-
-        const { userId } = req.params;
-
-        const moods = await Mood.find({
-            userId,
-        }).sort({
-            createdAt: -1,
-        });
-
-        res.json(moods);
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            message: "Server error",
-        });
-    }
-};
+    res.status(201).json(mood);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}

@@ -1,32 +1,22 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Navbar from "./components/Navbar";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import Dashboard from "./pages/Dashboard";
-import PeriodTracker from "./pages/PeriodTracker";
-import Profile from "./pages/Profile";
-import AiAssistant from "./pages/AiAssistant";
+import About from "./pages/About";
+import Resources from "./pages/Resources";
 import Community from "./pages/Community";
+import Dashboard from "./pages/Dashboard";
+import AICompanion from "./pages/AICompanion";
 
-
-function App() {
+export default function App() {
   return (
-    <BrowserRouter>
-      <Navbar />
-
+    <Router>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/tracker" element={<PeriodTracker />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/ai-assistant" element={<AiAssistant />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/resources" element={<Resources />} />
         <Route path="/community" element={<Community />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/ai" element={<AICompanion />} />
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 }
-
-export default App;
