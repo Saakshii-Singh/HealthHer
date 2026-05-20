@@ -85,15 +85,18 @@ io.on("connection", (socket) => {
 });
 
 // Production Setup to serve static SPA files
-if (process.env.NODE_ENV === "production") {
+const distPath = path.resolve(__dirname, "../client/dist/index.html");
+import fs from "fs";
+
+if (process.env.NODE_ENV === "production" && fs.existsSync(distPath)) {
   app.use(express.static(path.join(__dirname, "../client/dist")));
 
   app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../client", "dist", "index.html"));
+    res.sendFile(distPath);
   });
 } else {
-  app.get("/", (req, res) => {
-    res.send("API Server is running in development mode...");
+  app.get("*", (req, res) => {
+    res.send("API Server is running successfully!");
   });
 }
 
