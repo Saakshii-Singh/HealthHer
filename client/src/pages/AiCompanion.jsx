@@ -16,7 +16,7 @@ export default function AICompanion() {
     { 
       id: "welcome", 
       sender: "ai", 
-      text: "Hello! I am your HealthHer Wellness Companion. 🌸 I am here to offer a safe, warm, and judgment-free space to answer questions about menstrual health, emotional wellbeing, intimate care, and simple self-checks. How are you feeling today?" 
+      text: "Hello! I am your HealthHer Wellness Companion. 🌸 I am here to offer a safe, warm, and judgment free space to answer questions about menstrual health, emotional wellbeing, intimate care, and simple self checks. How are you feeling today?" 
     }
   ]);
   const [input, setInput] = useState("");
@@ -81,7 +81,7 @@ export default function AICompanion() {
             </span>
             <h1 className="mt-4 font-display text-4xl font-semibold text-plum">AI Wellness Companion</h1>
             <p className="text-xs md:text-sm text-muted-foreground mt-2 max-w-xl">
-              Get immediate, judgment-free education on feminine care, hormonal rhythms, hygiene tips, and lifestyle advice.
+              Get immediate, judgment free education on feminine care, hormonal rhythms, hygiene tips, and lifestyle advice.
             </p>
           </div>
         </section>

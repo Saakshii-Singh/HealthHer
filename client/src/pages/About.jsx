@@ -39,7 +39,7 @@ export default function About() {
               Health care, the way it should feel.
             </h1>
             <p className="mt-5 text-base md:text-lg text-muted-foreground leading-relaxed text-balance">
-              HealthHer was built because every woman deserves health information that's honest, accessible, and kind — and a community that listens without judgment.
+              HealthHer was built because every woman deserves health information that's honest, accessible, and kind and a community that listens without judgment.
             </p>
           </motion.div>
         </div>

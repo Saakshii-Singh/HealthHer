@@ -8,11 +8,11 @@ import { Calendar, Smile, Heart, Shield, Plus, Sparkles, BookOpen, AlertCircle, 
 // Predefined lists
 const SYMPTOMS = ["Cramps", "Headache", "Mood Swings", "Bloating", "Fatigue", "Backache", "Insomnia", "Nausea"];
 const MOOD_EMOJIS = [
-  { score: 1, emoji: "😢", label: "Low" },
-  { score: 2, emoji: "😕", label: "Sad" },
-  { score: 3, emoji: "😐", label: "Neutral" },
-  { score: 4, emoji: "🙂", label: "Good" },
-  { score: 5, emoji: "🌸", label: "Wonderful" }
+  { score: 1, emoji: "🥀", label: "Low" },
+  { score: 2, emoji: "🍂", label: "Sad" },
+  { score: 3, emoji: "☁️", label: "Neutral" },
+  { score: 4, emoji: "🪴", label: "Good" },
+  { score: 5, emoji: "🦋", label: "Wonderful" }
 ];
 
 export default function Dashboard() {
@@ -302,7 +302,7 @@ export default function Dashboard() {
             </form>
 
             <div className="flex items-center gap-1.5 justify-center text-2xs text-muted-foreground mt-6 font-semibold">
-              <Shield className="h-3 w-3" /> 256-bit encrypted data sync
+              <Shield className="h-3 w-3" /> 256 bit encrypted data sync
             </div>
           </motion.div>
         </div>
