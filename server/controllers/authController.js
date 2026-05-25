@@ -31,6 +31,11 @@ async function sendVerificationEmail(email, code) {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS,
         },
+        connectionTimeout: 5000, // 5 seconds timeout to prevent hanging the HTTP request
+        socketTimeout: 5000,
+        tls: {
+          rejectUnauthorized: false, // Prevents certificate verification blocks
+        },
       });
 
       const mailOptions = {
@@ -50,7 +55,7 @@ async function sendVerificationEmail(email, code) {
       };
 
       await transporter.sendMail(mailOptions);
-      console.log(`Verification email sent to: ${email}`);
+      console.log(`Verification email sent successfully to: ${email}`);
       return true;
     } catch (error) {
       console.error(`Error sending email to ${email}:`, error.message);
