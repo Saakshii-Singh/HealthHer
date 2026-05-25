@@ -15,7 +15,46 @@ function generateOTP() {
 
 // Transporter setup & email dispatcher
 async function sendVerificationEmail(email, code) {
-  // If SMTP configs exist, use nodemailer
+  // 1. Try Resend Email API (highly reliable, free, and bypasses port blocks!)
+  if (process.env.RESEND_API_KEY) {
+    try {
+      console.log(`Attempting to send email via Resend API to: ${email}`);
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: "HealthHer Support <onboarding@resend.dev>",
+          to: email,
+          subject: "Verify your HealthHer Account 🌸",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ebdcd9; border-radius: 16px; background-color: #fff9f9;">
+              <h2 style="color: #b8586c; text-align: center;">Welcome to HealthHer! 🌸</h2>
+              <p>Thank you for joining our community. To complete your account registration, please enter the following 6-digit verification code on the dashboard:</p>
+              <div style="font-size: 32px; font-weight: bold; letter-spacing: 4px; text-align: center; color: #561d33; background-color: #fff; border: 2px dashed #b8586c; padding: 15px; margin: 20px 0; border-radius: 12px;">
+                ${code}
+              </div>
+              <p style="color: #7c636c; font-size: 13px; text-align: center;">This code is valid for 15 minutes. If you did not request this, you can safely ignore this email.</p>
+            </div>
+          `,
+        }),
+      });
+
+      if (res.ok) {
+        console.log(`Verification email sent successfully via Resend to: ${email}`);
+        return true;
+      } else {
+        const errData = await res.json();
+        console.error("Resend API response error:", errData);
+      }
+    } catch (error) {
+      console.error("Error sending email via Resend API:", error.message);
+    }
+  }
+
+  // 2. Fallback: If SMTP configs exist, use nodemailer
   if (
     process.env.SMTP_HOST &&
     process.env.SMTP_PORT &&
