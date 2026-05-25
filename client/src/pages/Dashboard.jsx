@@ -4,26 +4,41 @@ import { SiteHeader } from "../components/SiteHeader";
 import { SiteFooter } from "../components/SiteFooter";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 import { Calendar, Smile, Heart, Shield, Plus, Sparkles, BookOpen, AlertCircle, RefreshCw } from "lucide-react";
+import { BACKEND_URL } from "../config";
 
 // Predefined lists
 const SYMPTOMS = ["Cramps", "Headache", "Mood Swings", "Bloating", "Fatigue", "Backache", "Insomnia", "Nausea"];
 const MOOD_EMOJIS = [
-  { score: 1, emoji: "🥀", label: "Low" },
-  { score: 2, emoji: "🍂", label: "Sad" },
-  { score: 3, emoji: "☁️", label: "Neutral" },
-  { score: 4, emoji: "🪴", label: "Good" },
-  { score: 5, emoji: "🦋", label: "Wonderful" }
+  { score: 1, emoji: "🌧️", label: "Low" },
+  { score: 2, emoji: "☁️", label: "Sad" },
+  { score: 3, emoji: "🍃", label: "Neutral" },
+  { score: 4, emoji: "☀️", label: "Good" },
+  { score: 5, emoji: "✨", label: "Wonderful" }
 ];
 
 export default function Dashboard() {
-  const [token, setToken] = useState(localStorage.getItem("hh_token"));
-  const [user, setUser] = useState(null);
+  const todayStr = new Date().toISOString().split("T")[0];
+  const [token, setToken] = useState(() => localStorage.getItem("hh_token"));
+  const [cutePopup, setCutePopup] = useState(null);
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem("hh_user");
+    return saved ? JSON.parse(saved) : null;
+  });
   
   // Auth Form State
   const [isLogin, setIsLogin] = useState(true);
   const [authForm, setAuthForm] = useState({ username: "", email: "", password: "" });
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+
+  // Email Verification States
+  const [verificationCode, setVerificationCode] = useState("");
+  const [verificationError, setVerificationError] = useState("");
+  const [verificationLoading, setVerificationLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccessMessage, setResendSuccessMessage] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [devCode, setDevCode] = useState("");
 
   // App Tracker States
   const [moodLogs, setMoodLogs] = useState([]);
@@ -52,7 +67,7 @@ export default function Dashboard() {
     if (!token) return;
     
     // Fetch moods
-    fetch("/api/moods", {
+    fetch(`${BACKEND_URL}/api/moods`, {
       headers: { "Authorization": `Bearer ${token}` }
     })
       .then(res => res.ok ? res.json() : [])
@@ -60,7 +75,7 @@ export default function Dashboard() {
       .catch(err => console.error(err));
 
     // Fetch cycle
-    fetch("/api/cycle", {
+    fetch(`${BACKEND_URL}/api/cycle`, {
       headers: { "Authorization": `Bearer ${token}` }
     })
       .then(res => res.ok ? res.json() : [])
@@ -72,6 +87,8 @@ export default function Dashboard() {
     e.preventDefault();
     setAuthError("");
     setAuthLoading(true);
+    setVerificationError("");
+    setResendSuccessMessage("");
 
     const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
     const payload = isLogin 
@@ -79,7 +96,7 @@ export default function Dashboard() {
       : authForm;
 
     try {
-      const res = await fetch(endpoint, {
+      const res = await fetch(`${BACKEND_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -94,6 +111,12 @@ export default function Dashboard() {
       localStorage.setItem("hh_user", JSON.stringify(data.user));
       setToken(data.token);
       setUser(data.user);
+
+      if (data._devVerificationCode) {
+        setDevCode(data._devVerificationCode);
+      } else {
+        setDevCode("");
+      }
       
       // Dispatch storage state
       window.dispatchEvent(new Event("hh_login_state_change"));
@@ -104,11 +127,97 @@ export default function Dashboard() {
     }
   };
 
+  // Cooldown timer for resending verification code
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    setVerificationError("");
+    setVerificationLoading(true);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/auth/verify-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email, code: verificationCode })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Verification failed");
+      }
+
+      // Successful verification!
+      const updatedUser = { ...user, isVerified: true };
+      localStorage.setItem("hh_user", JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      setVerificationCode("");
+      setDevCode("");
+      
+      // Dispatch login state change
+      window.dispatchEvent(new Event("hh_login_state_change"));
+      setCutePopup({ title: "Account Verified! 🎉", message: "Your email has been verified. Welcome to your safe, anonymous wellness dashboard!", icon: "💖" });
+    } catch (err) {
+      setVerificationError(err.message);
+    } finally {
+      setVerificationLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendCooldown > 0) return;
+    setVerificationError("");
+    setResendSuccessMessage("");
+    setResendLoading(true);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/auth/resend-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to resend code");
+      }
+
+      setResendSuccessMessage("A new verification code has been sent!");
+      setResendCooldown(60);
+      
+      if (data._devVerificationCode) {
+        setDevCode(data._devVerificationCode);
+      }
+    } catch (err) {
+      setVerificationError(err.message);
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("hh_token");
+    localStorage.removeItem("hh_user");
+    setToken(null);
+    setUser(null);
+    setDevCode("");
+    setVerificationCode("");
+    setVerificationError("");
+    setResendSuccessMessage("");
+    window.dispatchEvent(new Event("hh_login_state_change"));
+  };
+
   const handleLogMood = async (e) => {
     e.preventDefault();
     setSavingLog(true);
     try {
-      const res = await fetch("/api/moods", {
+      const res = await fetch(`${BACKEND_URL}/api/moods`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -120,9 +229,9 @@ export default function Dashboard() {
         const newLog = await res.json();
         setMoodLogs(prev => [newLog, ...prev]);
         setMoodInput({ score: 3, note: "", symptoms: [] });
-        alert("Mood logged successfully 💗");
+        setCutePopup({ title: "Beautiful Check-In! 🍃", message: "Your emotional wave and symptoms have been safely logged to your private journal. Be gentle with yourself today!", icon: "🌸" });
       } else {
-        alert("Could not log mood.");
+        setCutePopup({ title: "Oops!", message: "Could not log mood. Please check your connection and try again.", icon: "⚠️" });
       }
     } catch (err) {
       console.error(err);
@@ -135,7 +244,7 @@ export default function Dashboard() {
     e.preventDefault();
     setSavingLog(true);
     try {
-      const res = await fetch("/api/cycle", {
+      const res = await fetch(`${BACKEND_URL}/api/cycle`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -146,9 +255,9 @@ export default function Dashboard() {
       if (res.ok) {
         const newLog = await res.json();
         setCycleLogs(prev => [newLog, ...prev]);
-        alert("Cycle logged successfully 🌙");
+        setCutePopup({ title: "Cycle Logged! 🌙", message: "Your cycle calendar has been successfully updated. We have adjusted your flow predictions to match your body's rhythm.", icon: "✨" });
       } else {
-        alert("Could not log cycle.");
+        setCutePopup({ title: "Oops!", message: "Could not log cycle. Please check your inputs and try again.", icon: "⚠️" });
       }
     } catch (err) {
       console.error(err);
@@ -286,6 +395,34 @@ export default function Dashboard() {
                 />
               </div>
 
+              {!isLogin && authForm.password.length > 0 && (
+                <div className="mt-2.5 p-3.5 rounded-2xl bg-secondary/20 border border-border/40 text-3xs space-y-1.5 font-semibold text-plum">
+                  <p className="font-bold text-plum/80 uppercase tracking-wider mb-1">Password Requirements:</p>
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`h-1.5 w-1.5 rounded-full transition-colors ${authForm.password.length >= 8 ? "bg-green-500" : "bg-muted-foreground/40"}`} />
+                      <span className={authForm.password.length >= 8 ? "text-green-700" : "text-muted-foreground"}>Min 8 characters</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`h-1.5 w-1.5 rounded-full transition-colors ${/[A-Z]/.test(authForm.password) ? "bg-green-500" : "bg-muted-foreground/40"}`} />
+                      <span className={/[A-Z]/.test(authForm.password) ? "text-green-700" : "text-muted-foreground"}>1 Uppercase (A-Z)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`h-1.5 w-1.5 rounded-full transition-colors ${/[a-z]/.test(authForm.password) ? "bg-green-500" : "bg-muted-foreground/40"}`} />
+                      <span className={/[a-z]/.test(authForm.password) ? "text-green-700" : "text-muted-foreground"}>1 Lowercase (a-z)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`h-1.5 w-1.5 rounded-full transition-colors ${/\d/.test(authForm.password) ? "bg-green-500" : "bg-muted-foreground/40"}`} />
+                      <span className={/\d/.test(authForm.password) ? "text-green-700" : "text-muted-foreground"}>1 Number (0-9)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 col-span-2">
+                      <span className={`h-1.5 w-1.5 rounded-full transition-colors ${/[@$!%*?&]/.test(authForm.password) ? "bg-green-500" : "bg-muted-foreground/40"}`} />
+                      <span className={/[@$!%*?&]/.test(authForm.password) ? "text-green-700" : "text-muted-foreground"}>1 Special symbol (@$!%*?&)</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={authLoading}
@@ -302,8 +439,98 @@ export default function Dashboard() {
             </form>
 
             <div className="flex items-center gap-1.5 justify-center text-2xs text-muted-foreground mt-6 font-semibold">
-              <Shield className="h-3 w-3" /> 256 bit encrypted data sync
+              <Shield className="h-3 w-3" /> 256-bit encrypted data sync
             </div>
+          </motion.div>
+        </div>
+      ) : user && !user.isVerified ? (
+        /* ================= EMAIL VERIFICATION VIEW ================= */
+        <div className="mx-auto max-w-md px-5 py-16 flex flex-col justify-center min-h-[75vh]">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-3xl border border-border bg-card p-8 shadow-glow"
+          >
+            <div className="text-center mb-6">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-plum/10 text-plum mx-auto mb-3 shadow-soft">
+                <Shield className="h-6 w-6" />
+              </span>
+              <h1 className="font-display text-2xl font-bold text-plum">Verify your Email</h1>
+              <p className="text-xs text-muted-foreground mt-2">
+                We sent a 6-digit confirmation code to <strong className="text-plum font-semibold">{user.email}</strong>.
+              </p>
+            </div>
+
+            {verificationError && (
+              <div className="mb-4 rounded-xl bg-red-50 border border-red-100 p-3.5 flex items-start gap-2.5 text-xs text-red-600 font-semibold">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>{verificationError}</span>
+              </div>
+            )}
+
+            {resendSuccessMessage && (
+              <div className="mb-4 rounded-xl bg-green-50 border border-green-100 p-3.5 flex items-start gap-2.5 text-xs text-green-600 font-semibold">
+                <Sparkles className="h-4 w-4 shrink-0 mt-0.5 text-green-500" />
+                <span>{resendSuccessMessage}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleVerifyOTP} className="space-y-4">
+              <div>
+                <label className="text-2xs font-bold text-plum uppercase tracking-wider block mb-1.5 text-center">Verification Code</label>
+                <input
+                  type="text"
+                  required
+                  maxLength={6}
+                  placeholder="000000"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ""))}
+                  className="w-full text-center text-lg tracking-[8px] font-mono rounded-xl border border-input bg-background px-3.5 py-3 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all font-bold"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={verificationLoading || verificationCode.length !== 6}
+                className="w-full rounded-full bg-gradient-primary py-3.5 text-sm font-semibold text-white shadow-soft hover:shadow-glow hover:scale-[1.02] transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-50"
+              >
+                {verificationLoading ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" /> Verifying...
+                  </>
+                ) : (
+                  "Verify Account"
+                )}
+              </button>
+            </form>
+
+            <div className="flex flex-col gap-2 mt-6">
+              <button
+                onClick={handleResendCode}
+                disabled={resendLoading || resendCooldown > 0}
+                className="text-xs text-primary font-bold hover:underline transition-all disabled:text-muted-foreground disabled:no-underline text-center"
+              >
+                {resendLoading 
+                  ? "Sending code..." 
+                  : resendCooldown > 0 
+                    ? `Resend Code in ${resendCooldown}s` 
+                    : "Resend Verification Code"}
+              </button>
+              
+              <button
+                onClick={handleLogout}
+                className="text-xs text-muted-foreground hover:text-plum font-semibold transition-all mt-2 text-center"
+              >
+                Sign Out / Use Another Account
+              </button>
+            </div>
+
+            {devCode && (
+              <div className="mt-5 rounded-xl bg-teal-50 border border-teal-100 p-3.5 text-center text-xs text-teal-700 font-semibold">
+                <Sparkles className="h-4 w-4 inline mr-1.5 align-text-bottom text-teal-500" />
+                Dev Mode Code: <span className="font-mono text-sm tracking-widest bg-white px-2 py-0.5 rounded border border-teal-200">{devCode}</span>
+              </div>
+            )}
           </motion.div>
         </div>
       ) : (
@@ -412,6 +639,7 @@ export default function Dashboard() {
                           <label className="text-2xs uppercase tracking-wider font-bold text-plum block mb-1">Start Date</label>
                           <input
                             type="date"
+                            max={todayStr}
                             value={cycleInput.startDate}
                             onChange={(e) => setCycleInput({ ...cycleInput, startDate: e.target.value })}
                             className="w-full rounded-xl border border-input bg-background px-3.5 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 transition-all font-semibold"
@@ -653,6 +881,39 @@ export default function Dashboard() {
       )}
 
       <SiteFooter />
+
+      {/* Cute Celebratory Modal Popup */}
+      <AnimatePresence>
+        {cutePopup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-plum/45 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm rounded-3xl border border-primary/20 bg-white p-8 shadow-glow text-center overflow-hidden"
+            >
+              {/* Decorative top pink circle */}
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-primary" />
+              
+              <span className="grid h-16 w-16 place-items-center rounded-2xl bg-rose-50 text-4xl mx-auto mb-4 shadow-soft select-none animate-bounce">
+                {cutePopup.icon}
+              </span>
+              
+              <h3 className="font-display text-xl font-bold text-plum">{cutePopup.title}</h3>
+              <p className="text-xs text-muted-foreground mt-3 leading-relaxed font-semibold">
+                {cutePopup.message}
+              </p>
+              
+              <button
+                onClick={() => setCutePopup(null)}
+                className="mt-6 w-full rounded-full bg-gradient-primary py-3 text-xs font-bold text-white shadow-soft hover:shadow-glow hover:scale-[1.02] active:scale-95 transition-all"
+              >
+                Wonderful, thank you 💗
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

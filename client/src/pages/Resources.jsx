@@ -90,7 +90,7 @@ export default function Resources() {
               Reliable wellness guides, without the noise.
             </h1>
             <p className="mt-4 max-w-2xl text-base md:text-lg text-muted-foreground leading-relaxed">
-              Honest, practical, and science-backed articles on the topics women care about most — written and reviewed with gentle care.
+              Honest, practical, and science-backed articles on the topics women care about most, written and reviewed with gentle care.
             </p>
           </motion.div>
         </div>

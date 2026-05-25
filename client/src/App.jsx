@@ -1,10 +1,12 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Resources from "./pages/Resources";
 import Community from "./pages/Community";
 import Dashboard from "./pages/Dashboard";
-import AICompanion from "./pages/AICompanion";
+import AICompanion from "./pages/AiCompanion";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 
 export default function App() {
   return (
@@ -16,6 +18,8 @@ export default function App() {
         <Route path="/community" element={<Community />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/ai" element={<AICompanion />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
       </Routes>
     </Router>
   );

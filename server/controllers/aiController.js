@@ -1,3 +1,4 @@
+// Node 18+ has global fetch!
 
 // Local empathetic knowledge fallback
 const KNOWLEDGE_BASE = [
@@ -23,6 +24,22 @@ const KNOWLEDGE_BASE = [
   }
 ];
 
+// Local response matcher helper
+function getLocalFallbackResponse(message) {
+  const msgLower = message.toLowerCase();
+  
+  // Find match
+  const matched = KNOWLEDGE_BASE.find(k => 
+    k.keywords.some(keyword => msgLower.includes(keyword))
+  );
+
+  if (matched) {
+    return matched.response;
+  }
+
+  return "I appreciate you sharing that with me. 💗 Every wellness journey is unique. While I might not have a specific guide for that, remember that listening to your body and prioritizing rest, gentle nutrition, and healthy boundaries is always a great start. If you are experiencing physical discomfort or severe concerns, I highly encourage speaking to a kind healthcare provider who can give you personalized care.";
+}
+
 export async function generateCompanionResponse(req, res) {
   const { message } = req.body;
 
@@ -31,9 +48,11 @@ export async function generateCompanionResponse(req, res) {
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
+  const isKeyValid = apiKey && apiKey.trim() !== "" && apiKey !== "undefined";
 
-  if (apiKey) {
+  if (isKeyValid) {
     try {
+      // Prompt engineering to guide the AI model to be highly empathetic and educational
       const systemInstruction = 
         "You are an empathetic, compassionate, and highly professional women's health and wellness assistant named HealthHer Companion. " +
         "You provide educational information about menstrual health, emotional wellbeing, sleep, intimate care, and hygiene in a judgment-free, warm, and supportive tone. " +
@@ -56,24 +75,16 @@ export async function generateCompanionResponse(req, res) {
       if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
         return res.json({ response: data.candidates[0].content.parts[0].text });
       } else {
-        throw new Error("Invalid response format from Gemini");
+        throw new Error(data.error?.message || "Invalid response format from Gemini");
       }
     } catch (error) {
       console.error("Gemini API Error, falling back to local database:", error.message);
+      const fallbackResponse = getLocalFallbackResponse(message);
+      return res.json({ response: fallbackResponse });
     }
   }
 
   // Fallback to local empathetic matcher
-  const msgLower = message.toLowerCase();
-  const matched = KNOWLEDGE_BASE.find(k => 
-    k.keywords.some(keyword => msgLower.includes(keyword))
-  );
-
-  if (matched) {
-    return res.json({ response: matched.response });
-  }
-
-  return res.json({
-    response: "I appreciate you sharing that with me. 💗 Every wellness journey is unique. While I might not have a specific guide for that, remember that listening to your body and prioritizing rest, gentle nutrition, and healthy boundaries is always a great start. If you are experiencing physical discomfort or severe concerns, I highly encourage speaking to a kind healthcare provider who can give you personalized care."
-  });
+  const fallbackResponse = getLocalFallbackResponse(message);
+  return res.json({ response: fallbackResponse });
 }

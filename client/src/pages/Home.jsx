@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Heart, Sparkles, ShieldCheck, MessagesSquare, BookOpenText, Flower2, ArrowRight, Activity, Calendar, Smile, BrainCircuit } from "lucide-react";
-import heroImg from "../assets/image.png";
+import heroImg from "../assets/hero.jpg";
 import { SiteHeader } from "../components/SiteHeader";
 import { SiteFooter } from "../components/SiteFooter";
 
@@ -91,7 +91,7 @@ export default function Home() {
               variants={itemVariants}
               className="mt-5 max-w-lg text-base md:text-lg text-muted-foreground leading-relaxed"
             >
-              HealthHer is a beautiful, safe space for cycle prediction, emotional check-ins, compassionate AI guidance, and honest community chats — completely private and anonymous.
+              HealthHer is a beautiful, safe space for cycle prediction, emotional check-ins, compassionate AI guidance, and honest community chats, completely private and anonymous.
             </motion.p>
             
             <motion.div 
@@ -151,16 +151,14 @@ export default function Home() {
               key={title} 
               variants={itemVariants}
               whileHover={{ y: -6, transition: { duration: 0.2 } }}
-              className="group rounded-2xl bg-card border border-border p-6 shadow-soft hover:shadow-glow transition-all flex flex-col justify-between"
+              className="group rounded-2xl bg-card border border-border p-6 shadow-soft hover:shadow-glow transition-all"
             >
-              <div>
-                <div className={`grid h-12 w-12 place-items-center rounded-xl ${color} shadow-sm font-semibold`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <h3 className="mt-5 text-lg font-bold text-plum">{title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{text}</p>
+              <div className={`grid h-12 w-12 place-items-center rounded-xl ${color} shadow-sm font-semibold`}>
+                <Icon className="h-5 w-5" />
               </div>
-              <Link to={to} className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline group-hover:gap-1.5 transition-all self-start">
+              <h3 className="mt-5 text-lg font-bold text-plum">{title}</h3>
+              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{text}</p>
+              <Link to={to} className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline group-hover:gap-1.5 transition-all">
                 Access Feature <ArrowRight className="h-3 w-3" />
               </Link>
             </motion.div>

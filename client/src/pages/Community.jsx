@@ -4,6 +4,7 @@ import { SiteHeader } from "../components/SiteHeader";
 import { SiteFooter } from "../components/SiteFooter";
 import { Send, Shield, Sparkles, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { BACKEND_URL } from "../config";
 
 const ROOMS = [
   { id: "general", label: "General", emoji: "🌸" },
@@ -28,8 +29,16 @@ export default function Community() {
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
+  const [roomSearch, setRoomSearch] = useState("");
+  const [msgSearch, setMsgSearch] = useState("");
+  const [cooldownActive, setCooldownActive] = useState(false);
   const scrollRef = useRef(null);
   const socketRef = useRef(null);
+
+  const roomRef = useRef(room);
+  useEffect(() => {
+    roomRef.current = room;
+  }, [room]);
 
   // Initialize nickname
   useEffect(() => {
@@ -37,9 +46,9 @@ export default function Community() {
     setNickname(saved || randomNickname());
   }, []);
 
-  // Initialize socket connection
+  // Initialize socket connection once on mount
   useEffect(() => {
-    const socketUrl = window.location.hostname === "localhost" ? "http://localhost:5000" : window.location.origin;
+    const socketUrl = BACKEND_URL || "http://localhost:5000";
     const socket = io(socketUrl, {
       transports: ["websocket", "polling"]
     });
@@ -55,7 +64,7 @@ export default function Community() {
 
     // Listen for new messages
     socket.on("new_message", (message) => {
-      if (message.room === room) {
+      if (message.room === roomRef.current) {
         setMessages((prev) => {
           if (prev.some((x) => x._id === message._id || x.id === message.id)) return prev;
           return [...prev, message];
@@ -63,22 +72,23 @@ export default function Community() {
       }
     });
 
+    // Listen for rate limit errors
+    socket.on("rate_limit_error", (data) => {
+      alert(data.message);
+    });
+
     return () => {
       socket.disconnect();
     };
-  }, [room]); // Re-subscribe if room changes to ensure dynamic setup
+  }, []);
 
-  // Join room and load historical messages
+  // Join room history from REST API only when channel changes
   useEffect(() => {
-    if (!socketRef.current) return;
-    
+    setMsgSearch(""); // Reset message filter when room changes
     setLoading(true);
     
-    // Join the WebSocket room
-    socketRef.current.emit("join_room", { room });
-
     // Fetch message history from REST API
-    fetch(`/api/messages/${room}`)
+    fetch(`${BACKEND_URL}/api/messages/${room}`)
       .then((res) => {
         if (!res.ok) throw new Error("Could not load history");
         return res.json();
@@ -91,6 +101,13 @@ export default function Community() {
         console.error("Error loading chat history:", err);
         setLoading(false);
       });
+  }, [room]);
+
+  // Separate effect to handle WebSockets room joining when connection or room changes
+  useEffect(() => {
+    if (socketRef.current && connected) {
+      socketRef.current.emit("join_room", { room });
+    }
   }, [room, connected]);
 
   // Autoscroll
@@ -118,10 +135,21 @@ export default function Community() {
     const name = nickname.trim() || randomNickname();
     if (!content) return;
 
+    if (cooldownActive) {
+      alert("Slow down! Please wait a moment before sending another message. 🌸");
+      return;
+    }
+
     if (content.length > 1000) {
       alert("Message too long (max 1000 characters)");
       return;
     }
+
+    // Activate anti-spam cooldown
+    setCooldownActive(true);
+    setTimeout(() => {
+      setCooldownActive(false);
+    }, 1500);
 
     const payload = {
       nickname: name,
@@ -136,7 +164,7 @@ export default function Community() {
     } else {
       // Fallback to HTTP POST if socket is disconnected
       try {
-        const res = await fetch("/api/messages", {
+        const res = await fetch(`${BACKEND_URL}/api/messages`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -162,6 +190,19 @@ export default function Community() {
     }
     return `hsl(${h}, 70%, 85%)`;
   }, []);
+
+  const filteredRooms = useMemo(() => {
+    return ROOMS.filter(r => r.label.toLowerCase().includes(roomSearch.toLowerCase()));
+  }, [roomSearch]);
+
+  const filteredMessages = useMemo(() => {
+    if (!msgSearch.trim()) return messages;
+    const query = msgSearch.toLowerCase();
+    return messages.filter(m => 
+      m.nickname.toLowerCase().includes(query) || 
+      m.content.toLowerCase().includes(query)
+    );
+  }, [messages, msgSearch]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -203,24 +244,39 @@ export default function Community() {
 
           <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
             <p className="text-xs uppercase tracking-wider text-plum font-bold mb-3">Chat Channels</p>
+            
+            <input
+              type="text"
+              value={roomSearch}
+              onChange={(e) => setRoomSearch(e.target.value)}
+              placeholder="Search channels..."
+              className="w-full mb-3 rounded-xl border border-input bg-background px-3.5 py-2 text-xs outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+            />
+
             <div className="flex flex-col gap-1.5">
-              {ROOMS.map((r) => {
-                const active = room === r.id;
-                return (
-                  <button
-                    key={r.id}
-                    onClick={() => setRoom(r.id)}
-                    className={`flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm transition-all text-left ${
-                      active 
-                        ? "bg-gradient-primary text-white shadow-soft font-bold scale-[1.02]" 
-                        : "hover:bg-secondary/60 text-muted-foreground hover:text-foreground font-semibold"
-                    }`}
-                  >
-                    <span className="text-base">{r.emoji}</span>
-                    <span>{r.label}</span>
-                  </button>
-                );
-              })}
+              {filteredRooms.length === 0 ? (
+                <div className="text-center py-4 text-xs text-muted-foreground font-medium">
+                  No channels found
+                </div>
+              ) : (
+                filteredRooms.map((r) => {
+                  const active = room === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => setRoom(r.id)}
+                      className={`flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm transition-all text-left ${
+                        active 
+                          ? "bg-gradient-primary text-white shadow-soft font-bold scale-[1.02]" 
+                          : "hover:bg-secondary/60 text-muted-foreground hover:text-foreground font-semibold"
+                      }`}
+                    >
+                      <span className="text-base">{r.emoji}</span>
+                      <span>{r.label}</span>
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -236,7 +292,7 @@ export default function Community() {
 
         {/* Chat window */}
         <div className="flex flex-col rounded-2xl border border-border bg-card shadow-soft overflow-hidden min-h-[550px] max-h-[650px]">
-          <header className="flex items-center justify-between border-b border-border/60 px-5 py-4 bg-secondary/30">
+          <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 px-5 py-4 bg-secondary/30">
             <div>
               <h2 className="font-display text-xl font-bold text-plum">
                 {ROOMS.find((r) => r.id === room)?.emoji} {ROOMS.find((r) => r.id === room)?.label} Room
@@ -246,7 +302,19 @@ export default function Community() {
                 <span>{connected ? "Connected to realtime stream" : "Reconnecting..."}</span>
               </div>
             </div>
-            <span className="text-xs font-semibold bg-white border border-border px-3 py-1 rounded-full text-plum">{messages.length} log entries</span>
+            
+            <div className="flex items-center gap-3 self-end sm:self-center">
+              <input
+                type="text"
+                value={msgSearch}
+                onChange={(e) => setMsgSearch(e.target.value)}
+                placeholder="Search messages..."
+                className="rounded-xl border border-input bg-white px-3.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all w-40 sm:w-48"
+              />
+              <span className="text-xs font-semibold bg-white border border-border px-3 py-1 rounded-full text-plum">
+                {filteredMessages.length} {filteredMessages.length === 1 ? "entry" : "entries"}
+              </span>
+            </div>
           </header>
 
           {/* Message List */}
@@ -256,13 +324,15 @@ export default function Community() {
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                 <span>Fetching conversations...</span>
               </div>
-            ) : messages.length === 0 ? (
+            ) : filteredMessages.length === 0 ? (
               <div className="text-center text-sm text-muted-foreground py-20 font-medium">
-                No chat logs here yet. Say something kind to start the circle 💗
+                {messages.length === 0 
+                  ? "No chat logs here yet. Say something kind to start the circle 💗" 
+                  : "No messages match your search filter."}
               </div>
             ) : (
               <div className="space-y-4">
-                {messages.map((m, index) => {
+                {filteredMessages.map((m, index) => {
                   const mine = m.nickname === nickname;
                   const keyId = m._id || m.id || index;
                   return (
@@ -315,12 +385,13 @@ export default function Community() {
               }}
               rows={1}
               maxLength={1000}
-              placeholder={`Share advice with the ${ROOMS.find((r) => r.id === room)?.label} circle...`}
-              className="flex-1 resize-none rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary max-h-32 transition-all"
+              disabled={cooldownActive}
+              placeholder={cooldownActive ? "Spam protection cooldown... 🌸" : `Share advice with the ${ROOMS.find((r) => r.id === room)?.label} circle...`}
+              className="flex-1 resize-none rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary max-h-32 transition-all disabled:opacity-75 disabled:bg-secondary/20"
             />
             <button
               type="submit"
-              disabled={!draft.trim() || !connected}
+              disabled={!draft.trim() || !connected || cooldownActive}
               className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-primary text-white shadow-soft hover:shadow-glow hover:scale-[1.03] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 disabled:shadow-none"
               aria-label="Send message"
             >

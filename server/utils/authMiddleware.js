@@ -6,8 +6,13 @@ export async function protect(req, res, next) {
 
   if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
     try {
+      // Extract token: "Bearer <token>"
       token = req.headers.authorization.split(" ")[1];
+
+      // Decode and verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET || "hh_super_secret_jwt_key_9988");
+
+      // Find user, append to request (omit hashed password)
       req.user = await User.findById(decoded.id).select("-password");
 
       if (!req.user) {
@@ -25,3 +30,11 @@ export async function protect(req, res, next) {
     return res.status(401).json({ message: "Not authorized, no token provided" });
   }
 }
+
+export function verifiedOnly(req, res, next) {
+  if (req.user && req.user.isVerified) {
+    return next();
+  }
+  return res.status(403).json({ message: "Access denied. Email verification required." });
+}
+

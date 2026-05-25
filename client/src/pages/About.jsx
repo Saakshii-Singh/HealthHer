@@ -39,7 +39,7 @@ export default function About() {
               Health care, the way it should feel.
             </h1>
             <p className="mt-5 text-base md:text-lg text-muted-foreground leading-relaxed text-balance">
-              HealthHer was built because every woman deserves health information that's honest, accessible, and kind and a community that listens without judgment.
+              HealthHer was built because every woman deserves health information that's honest, accessible, and kind, and a community that listens without judgment.
             </p>
           </motion.div>
         </div>
@@ -78,7 +78,7 @@ export default function About() {
       <section className="mx-auto max-w-3xl px-5 py-10 space-y-6">
         <h2 className="font-display text-3xl font-semibold text-plum">Our mission</h2>
         <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-          We're building HealthHer so that wellness, hygiene, and emotional support are no longer hard to find — or hard to talk about. From your first cycle to long-term intimate wellness, you deserve a space that is supportive, informative, and private.
+          We're building HealthHer so that wellness, hygiene, and emotional support are no longer hard to find, or hard to talk about. From your first cycle to long-term intimate wellness, you deserve a space that is supportive, informative, and private.
         </p>
         <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
           Today that means a unified tracking dashboard, supportive AI check-ins, and an anonymous room chat. Tomorrow it means even more: expert-guided medical roundtables, period product guides, and deeper analytics that put your health back in your own hands.

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SiteHeader } from "../components/SiteHeader";
 import { SiteFooter } from "../components/SiteFooter";
 import { Send, Sparkles, BrainCircuit, Heart, Plus, HelpCircle, ShieldAlert } from "lucide-react";
+import { BACKEND_URL } from "../config";
 
 const SUGGESTIONS = [
   "How can I relieve severe cramps naturally?",
@@ -16,7 +17,7 @@ export default function AICompanion() {
     { 
       id: "welcome", 
       sender: "ai", 
-      text: "Hello! I am your HealthHer Wellness Companion. 🌸 I am here to offer a safe, warm, and judgment free space to answer questions about menstrual health, emotional wellbeing, intimate care, and simple self checks. How are you feeling today?" 
+      text: "Hello! I am your HealthHer Wellness Companion. 🌸 I am here to offer a safe, warm, and judgment-free space to answer questions about menstrual health, emotional wellbeing, intimate care, and simple self-checks. How are you feeling today?" 
     }
   ]);
   const [input, setInput] = useState("");
@@ -39,7 +40,7 @@ export default function AICompanion() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/ai/chat", {
+      const res = await fetch(`${BACKEND_URL}/api/ai/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text })
@@ -81,7 +82,7 @@ export default function AICompanion() {
             </span>
             <h1 className="mt-4 font-display text-4xl font-semibold text-plum">AI Wellness Companion</h1>
             <p className="text-xs md:text-sm text-muted-foreground mt-2 max-w-xl">
-              Get immediate, judgment free education on feminine care, hormonal rhythms, hygiene tips, and lifestyle advice.
+              Get immediate, judgment-free education on feminine care, hormonal rhythms, hygiene tips, and lifestyle advice.
             </p>
           </div>
         </section>
@@ -152,7 +153,7 @@ export default function AICompanion() {
                 <button
                   type="submit"
                   disabled={loading || !input.trim()}
-                  className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-primary text-white shadow-soft hover:shadow-glow hover:scale-[1.03] active:scale-95 transition-all"
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-primary text-white shadow-soft hover:shadow-glow hover:scale-[1.03] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 disabled:shadow-none"
                 >
                   <Send className="h-4 w-4" />
                 </button>

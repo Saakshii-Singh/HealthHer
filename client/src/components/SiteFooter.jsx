@@ -41,10 +41,10 @@ export function SiteFooter() {
               <Link to="/about" className="hover:text-primary transition-colors">Our Mission</Link>
             </li>
             <li>
-              <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
+              <Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
             </li>
             <li>
-              <a href="#" className="hover:text-primary transition-colors">Terms of Use</a>
+              <Link to="/terms" className="hover:text-primary transition-colors">Terms of Use</Link>
             </li>
           </ul>
         </div>
