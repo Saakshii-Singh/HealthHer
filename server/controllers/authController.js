@@ -187,17 +187,12 @@ export async function registerUser(req, res) {
     const otp = generateOTP();
     const otpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    const user = await User.create({
+        const user = await User.create({
       username,
       email,
       password,
-      isVerified: false,
-       otp,
-      verificationCodeExpires: otpExpires,
+      isVerified: true, // Auto-verified: No email verification required!
     });
-
-    // Send code
-    const isRealEmailSent = await sendVerificationEmail(user.email, otp);
 
     res.status(201).json({
       token: generateToken(user._id),
@@ -205,10 +200,8 @@ export async function registerUser(req, res) {
         _id: user._id,
         username: user.username,
         email: user.email,
-        isVerified: user.isVerified,
+        isVerified: true,
       },
-      // Dev helper: return OTP in response if not using real SMTP to ease manual testing
-      ...(isRealEmailSent ? {} : { _devVerificationCode: otp }),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
