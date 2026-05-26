@@ -15,7 +15,48 @@ function generateOTP() {
 
 // Transporter setup & email dispatcher
 async function sendVerificationEmail(email, code) {
-  // 1. Try Resend Email API (highly reliable, free, and bypasses port blocks!)
+  // 1. Try Brevo HTTP API (100% Free, sends to any recipient, requires no custom domain, bypasses port blocks!)
+  if (process.env.BREVO_API_KEY) {
+    try {
+      console.log(`Attempting to send email via Brevo API to: ${email}`);
+      const senderEmail = process.env.SMTP_USER || "rajnibala.singh8423@gmail.com";
+      const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "accept": "application/json",
+          "api-key": process.env.BREVO_API_KEY,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          sender: { name: "HealthHer Support", email: senderEmail },
+          to: [{ email: email }],
+          subject: "Verify your HealthHer Account 🌸",
+          htmlContent: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ebdcd9; border-radius: 16px; background-color: #fff9f9;">
+              <h2 style="color: #b8586c; text-align: center;">Welcome to HealthHer! 🌸</h2>
+              <p>Thank you for joining our community. To complete your account registration, please enter the following 6-digit verification code on the dashboard:</p>
+              <div style="font-size: 32px; font-weight: bold; letter-spacing: 4px; text-align: center; color: #561d33; background-color: #fff; border: 2px dashed #b8586c; padding: 15px; margin: 20px 0; border-radius: 12px;">
+                ${code}
+              </div>
+              <p style="color: #7c636c; font-size: 13px; text-align: center;">This code is valid for 15 minutes. If you did not request this, you can safely ignore this email.</p>
+            </div>
+          `,
+        }),
+      });
+
+      if (res.ok) {
+        console.log(`Verification email sent successfully via Brevo to: ${email}`);
+        return true;
+      } else {
+        const errData = await res.json();
+        console.error("Brevo API response error:", errData);
+      }
+    } catch (error) {
+      console.error("Error sending email via Brevo API:", error.message);
+    }
+  }
+
+  // 2. Try Resend Email API (highly reliable, free, and bypasses port blocks!)
   if (process.env.RESEND_API_KEY) {
     try {
       console.log(`Attempting to send email via Resend API to: ${email}`);
@@ -151,7 +192,7 @@ export async function registerUser(req, res) {
       email,
       password,
       isVerified: false,
-      verificationCode: otp,
+       otp,
       verificationCodeExpires: otpExpires,
     });
 
