@@ -184,25 +184,30 @@ export async function registerUser(req, res) {
       return res.status(400).json({ message: "Username is already taken" });
     }
 
-    const otp = generateOTP();
-    const otpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+   const otp = generateOTP();
+const otpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-        const user = await User.create({
-      username,
-      email,
-      password,
-      isVerified: true, // Auto-verified: No email verification required!
-    });
+const user = await User.create({
+  username,
+  email,
+  password,
+  isVerified: false,
+  verificationCode: otp,
+  verificationCodeExpires: otpExpires,
+});
 
-    res.status(201).json({
-      token: generateToken(user._id),
-      user: {
-        _id: user._id,
-        username: user.username,
-        email: user.email,
-        isVerified: true,
-      },
-    });
+const isRealEmailSent = await sendVerificationEmail(email, otp);
+
+res.status(201).json({
+  token: generateToken(user._id),
+  user: {
+    _id: user._id,
+    username: user.username,
+    email: user.email,
+    isVerified: false,
+  },
+  ...(!isRealEmailSent ? { _devVerificationCode: otp } : {}),
+});
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

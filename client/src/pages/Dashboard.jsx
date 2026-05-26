@@ -429,12 +429,12 @@ export default function Dashboard() {
                 className="w-full rounded-full bg-gradient-primary py-3.5 text-sm font-semibold text-white shadow-soft hover:shadow-glow hover:scale-[1.02] transition-all flex items-center justify-center gap-2 mt-6 disabled:opacity-50"
               >
                 {authLoading ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 animate-spin" /> {isLogin ? "Verifying..." : "Creating Account..."}
-                  </>
-                ) : (
-                  isLogin ? "Sign In" : "Sign Up & Begin"
-                )}
+  <>
+    <RefreshCw className="h-4 w-4 animate-spin" /> {isLogin ? "Signing In..." : "Creating Account..."}
+  </>
+) : (
+  isLogin ? "Sign In" : "Create Account"
+)}
               </button>
             </form>
 
