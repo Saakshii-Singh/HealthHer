@@ -60,7 +60,7 @@ export async function generateCompanionResponse(req, res) {
         "Keep responses structured, gentle, and warm. Use formatting like bullet points or emojis to make it pleasant to read.";
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -6,6 +6,7 @@ const mainNav = [
   { to: "/", label: "Home" },
   { to: "/resources", label: "Resources" },
   { to: "/community", label: "Community" },
+  { to: "/ai", label: "AI Companion" },
   { to: "/about", label: "About" },
 ];
 

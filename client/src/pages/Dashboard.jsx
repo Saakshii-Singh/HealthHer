@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { SiteHeader } from "../components/SiteHeader";
 import { SiteFooter } from "../components/SiteFooter";
@@ -562,12 +563,12 @@ export default function Dashboard() {
               >
                 <Smile className="h-4 w-4" /> Mood Logger
               </button>
-              <a
-                href="/ai"
+              <Link
+                to="/ai"
                 className="rounded-full bg-teal-50 border border-teal-100 px-5 py-2.5 text-xs font-bold hover:bg-teal-100 text-teal-700 shadow-soft transition-all flex items-center gap-1.5"
               >
                 <Sparkles className="h-4 w-4" /> AI Chat
-              </a>
+              </Link>
             </div>
           </motion.div>
 

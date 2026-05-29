@@ -41,7 +41,7 @@ const features = [
     icon: BrainCircuit, 
     title: "AI Wellness Companion", 
     text: "An empathetic companion ready to chat 24/7. Get instant answers about hygiene & health.",
-    to: "/dashboard",
+    to: "/ai",
     color: "bg-teal-50 text-teal-500"
   },
   { 
