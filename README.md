@@ -1,4 +1,4 @@
-#  HealthHer — Kindred Confidant Connect
+#  HealthHer 
 
 > **A Secure, Anonymous, and Elegant Full-Stack Women's Wellness & Companion Platform**
 
