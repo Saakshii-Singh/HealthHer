@@ -10,7 +10,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Framer Motion](https://img.shields.io/badge/Framer_Motion-11.0-FF00C1?style=for-the-badge&logo=framer&logoColor=white)](https://www.framer.com/motion/)
 
-**HealthHer** (Kindred Confidant Connect) is a modern, full-stack wellness platform engineered to empower women with comprehensive cycle tracking, mood and symptom analytics, and real-time anonymous community support. Adhering to a zero-auth, high-privacy philosophy, it integrates real-time chat rooms, curated wellness resources, and a private AI emotional support companion—all presented in a beautiful blush-peach and deep-plum pastel design.
+**HealthHer is a modern, full-stack wellness platform engineered to empower women with comprehensive cycle tracking, mood and symptom analytics, and real-time anonymous community support. Adhering to a zero-auth, high-privacy philosophy, it integrates real-time chat rooms, curated wellness resources, and a private AI emotional support companion—all presented in a beautiful blush-peach and deep-plum pastel design.
 
 ---
 
